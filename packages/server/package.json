@@ -1,0 +1,32 @@
+{
+  "name": "hangar",
+  "version": "0.0.0",
+  "description": "A local dashboard for Claude Code: sessions, config, cost and more across all your repos.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "hangar": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx watch src/cli.ts --no-open",
+    "build": "tsup && node scripts/copy-web.mjs",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "express": "^5.3.0",
+    "open": "^11.0.4",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@hangar/shared": "workspace:*",
+    "@types/express": "^5.0.6",
+    "tsup": "^9.0.0",
+    "tsx": "^4.23.15"
+  }
+}

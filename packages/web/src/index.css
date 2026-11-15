@@ -1,0 +1,26 @@
+@import 'tailwindcss';
+
+/* Design tokens from CLAUDE.md. Fonts are self-hosted (no network calls). */
+@theme {
+  --color-bg: #0e1014;
+  --color-surface: #161920;
+  --color-surface-2: #12151b;
+  --color-border: #262a33;
+  --color-text: #e7e9ee;
+  --color-muted: #a0a7b4;
+  --color-accent: #8ab4ff;
+  --color-running: #4ade80;
+  --color-waiting: #fbbf24;
+  --color-error: #f87171;
+  --color-done: #c4b5fd;
+  --font-sans: 'Inter Variable', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
