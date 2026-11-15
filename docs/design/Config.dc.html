@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Config</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+body{margin:0;background:#0E1014}
+a{color:#8AB4FF}a:hover{color:#B7D0FF}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #0E1014; color: #E7E9EE; font-family: Inter, system-ui, sans-serif">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; padding: 12px 28px; border-bottom: 1px solid #262A33; background: #12151B">
+    <span style="display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg>
+      Hangar
+    </span>
+    <nav aria-label="Main" style="display: flex; flex-wrap: wrap; gap: 4px; font-size: 14px">
+      <a href="Main.dc.html" style="padding: 8px 12px; border-radius: 8px; color: #A0A7B4; text-decoration: none">Dashboard</a>
+      <a href="Sessions.dc.html" style="padding: 8px 12px; border-radius: 8px; color: #A0A7B4; text-decoration: none">Sessions</a>
+      <a href="Config.dc.html" style="padding: 8px 12px; border-radius: 8px; background: #1E222B; color: #E7E9EE; text-decoration: none; font-weight: 600">Config</a>
+      <a href="Insights.dc.html" style="padding: 8px 12px; border-radius: 8px; color: #A0A7B4; text-decoration: none">Insights</a>
+      <a href="Library.dc.html" style="padding: 8px 12px; border-radius: 8px; color: #A0A7B4; text-decoration: none">Library</a>
+    </nav>
+  </header>
+
+  <main style="max-width: 1280px; margin: 0 auto; padding: 24px 28px 48px; display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <h1 style="margin: 0; font-size: 28px; font-weight: 700">Config · api-server</h1>
+        <span style="font-size: 14px; color: #A0A7B4">What Claude Code actually uses in this repo, and which file each value comes from.</span>
+      </div>
+      <div role="tablist" aria-label="Scope" style="display: flex; flex-wrap: wrap; gap: 6px">
+        <sc-for list="{{tabs}}" as="t" hint-placeholder-count="4">
+          <button type="button" role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button>
+        </sc-for>
+      </div>
+    </div>
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A0A7B4">{{tabNote}}</span>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+      <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+        <section style="display: flex; flex-direction: column; gap: 6px; padding: 18px; border-radius: 14px; background: #161920; border: 1px solid #262A33">
+          <h2 style="margin: 0 0 6px; font-size: 17px; font-weight: 700">Settings</h2>
+          <sc-for list="{{rows}}" as="r" hint-placeholder-count="5">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 10px 0; border-bottom: 1px solid #1E222B">
+              <span style="flex: 0 0 220px; font-family: 'JetBrains Mono', monospace; font-size: 13px">{{r.key}}</span>
+              <span style="flex: 1 1 160px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #E7E9EE">{{r.value}}</span>
+              <span style="{{r.chip}}">{{r.source}}</span>
+              <sc-if value="{{r.hasOver}}" hint-placeholder-val="{{ false }}">
+                <span style="flex: 1 1 100%; font-size: 12px; color: #A0A7B4">Overrides <span style="font-family: 'JetBrains Mono', monospace; text-decoration: line-through">{{r.over}}</span></span>
+              </sc-if>
+            </div>
+          </sc-for>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: 14px; background: #161920; border: 1px solid #262A33">
+          <h2 style="margin: 0; font-size: 17px; font-weight: 700">Permissions</h2>
+          <div style="display: flex; flex-wrap: wrap; gap: 16px">
+            <div style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 6px">
+              <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.05em; color: #4ADE80">ALLOW</span>
+              <sc-for list="{{allow}}" as="p" hint-placeholder-count="4">
+                <span style="display: flex; justify-content: space-between; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 13px"><span>{{p.rule}}</span><span style="{{p.chip}}">{{p.src}}</span></span>
+              </sc-for>
+            </div>
+            <div style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 6px">
+              <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.05em; color: #F87171">DENY</span>
+              <sc-for list="{{deny}}" as="p" hint-placeholder-count="2">
+                <span style="display: flex; justify-content: space-between; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 13px"><span>{{p.rule}}</span><span style="{{p.chip}}">{{p.src}}</span></span>
+              </sc-for>
+            </div>
+          </div>
+        </section>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 20px">
+          <section style="flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: 14px; background: #161920; border: 1px solid #262A33">
+            <h2 style="margin: 0; font-size: 17px; font-weight: 700">Hooks</h2>
+            <sc-for list="{{hooks}}" as="h" hint-placeholder-count="3">
+              <div style="display: flex; flex-direction: column; gap: 2px">
+                <span style="font-size: 13px; font-weight: 600">{{h.ev}}</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A0A7B4">{{h.cmd}}</span>
+              </div>
+            </sc-for>
+          </section>
+          <section style="flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: 14px; background: #161920; border: 1px solid #262A33">
+            <h2 style="margin: 0; font-size: 17px; font-weight: 700">MCP servers</h2>
+            <sc-for list="{{mcp}}" as="m" hint-placeholder-count="3">
+              <div style="display: flex; align-items: center; gap: 10px; font-size: 14px">
+                <span style="{{m.dot}}"></span>
+                <span style="flex: 1; font-weight: 600">{{m.name}}</span>
+                <span style="font-size: 12px; color: #A0A7B4">{{m.meta}}</span>
+              </div>
+            </sc-for>
+          </section>
+        </div>
+      </div>
+
+      <aside style="flex: 1 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 18px; border-radius: 14px; background: #161920; border: 1px solid #262A33">
+        <h2 style="margin: 0; font-size: 17px; font-weight: 700">CLAUDE.md files</h2>
+        <span style="font-size: 13px; color: #A0A7B4">Loaded into every session in this repo, in this order.</span>
+        <sc-for list="{{mds}}" as="d" hint-placeholder-count="3">
+          <div style="display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 10px; background: #12151B; border: 1px solid #262A33">
+            <span style="display: flex; justify-content: space-between; gap: 8px">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px">{{d.path}}</span>
+              <span style="font-size: 12px; color: #A0A7B4">{{d.tokens}}</span>
+            </span>
+            <span style="height: 5px; border-radius: 3px; background: #262A33; overflow: hidden"><span style="{{d.bar}}"></span></span>
+            <span style="font-size: 12px; color: #A0A7B4">{{d.when}}</span>
+          </div>
+        </sc-for>
+        <h3 style="margin: 8px 0 0; font-size: 14px; font-weight: 700">Linter</h3>
+        <sc-for list="{{lint}}" as="l" hint-placeholder-count="3">
+          <div style="{{l.box}}">
+            <span style="{{l.tagStyle}}">{{l.tag}}</span>
+            <span style="font-size: 13px; line-height: 1.45">{{l.text}}</span>
+          </div>
+        </sc-for>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#8AB4FF","options":["#8AB4FF","#5EEAD4","#C4B5FD","#FDBA74"]},"$preview":{"width":1440,"height":1250}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tab: 'effective' };
+  }
+  renderVals() {
+    var self = this;
+    var accent = this.props.accent ?? '#8AB4FF';
+    var tab = this.state.tab;
+    var SRC = { Global: '#C4B5FD', Project: accent, Local: '#FDBA74' };
+    var chip = function (src) { return 'padding: 2px 8px; border-radius: 6px; font-family: Inter, sans-serif; font-size: 11px; font-weight: 700; white-space: nowrap; color: #0E1014; background: ' + SRC[src]; };
+    var ROWS = [
+      { key: 'model', v: { Global: 'sonnet', Project: 'opus' } },
+      { key: 'permissions.defaultMode', v: { Global: 'default', Local: 'acceptEdits' } },
+      { key: 'cleanupPeriodDays', v: { Global: '30' } },
+      { key: 'env.NODE_ENV', v: { Project: 'development' } },
+      { key: 'outputStyle', v: { Global: 'concise' } }
+    ];
+    var order = ['Local', 'Project', 'Global'];
+    var rows = [];
+    ROWS.forEach(function (r) {
+      if (tab === 'effective') {
+        var src = order.find(function (s) { return r.v[s] !== undefined; });
+        var lower = order.slice(order.indexOf(src) + 1).find(function (s) { return r.v[s] !== undefined; });
+        rows.push({ key: r.key, value: r.v[src], source: src, chip: chip(src), hasOver: !!lower, over: lower ? lower + ': ' + r.v[lower] : '' });
+      } else {
+        var s = tab.charAt(0).toUpperCase() + tab.slice(1);
+        if (r.v[s] !== undefined) rows.push({ key: r.key, value: r.v[s], source: s, chip: chip(s), hasOver: false, over: '' });
+      }
+    });
+    var NOTES = {
+      effective: 'Merged result · Local > Project > Global',
+      global: '~/.claude/settings.json',
+      project: '~/code/api-server/.claude/settings.json (committed)',
+      local: '~/code/api-server/.claude/settings.local.json (git-ignored)'
+    };
+    var tabs = [['effective', 'Effective'], ['global', 'Global'], ['project', 'Project'], ['local', 'Local']].map(function (t) {
+      var on = tab === t[0];
+      return { label: t[1], on: on, pick: function () { self.setState({ tab: t[0] }); },
+        style: 'min-height: 40px; padding: 0 14px; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; ' +
+          (on ? 'border: 1px solid ' + accent + '; background: #1E2738; color: #E7E9EE' : 'border: 1px solid #262A33; background: transparent; color: #A0A7B4') };
+    });
+    var perm = function (rule, src) { return { rule: rule, src: src, chip: chip(src) }; };
+    var allow = [perm('Bash(npm test:*)', 'Project'), perm('Bash(git status)', 'Global'), perm('Edit(src/**)', 'Project'), perm('Bash(npm install:*)', 'Local')];
+    var deny = [perm('Read(.env*)', 'Global'), perm('Bash(rm -rf:*)', 'Global')];
+    var hooks = [
+      { ev: 'PostToolUse · Edit', cmd: 'npx prettier --write $FILE' },
+      { ev: 'Stop', cmd: 'notify-send "Claude finished"' },
+      { ev: 'PreToolUse · Bash', cmd: './scripts/block-prod-db.sh' }
+    ];
+    var dot = function (c) { return 'width: 10px; height: 10px; border-radius: 50%; background: ' + c; };
+    var mcp = [
+      { name: 'github', meta: 'Global · responding · 24 tools', dot: dot('#4ADE80') },
+      { name: 'postgres', meta: 'Project · responding · 3 tools', dot: dot('#4ADE80') },
+      { name: 'linear', meta: 'Global · auth expired', dot: dot('#F87171') }
+    ];
+    var md = function (path, tok, max, when) { return { path: path, tokens: tok + ' tokens', when: when, bar: 'display: block; height: 100%; width: ' + Math.min(100, Math.round(tok / max * 100)) + '%; background: ' + (tok > 4000 ? '#FBBF24' : accent) }; };
+    var mds = [
+      md('~/.claude/CLAUDE.md', 1200, 6000, 'Edited yesterday'),
+      md('api-server/CLAUDE.md', 4800, 6000, 'Edited Mon · 212 lines'),
+      md('api-server/src/db/CLAUDE.md', 600, 6000, 'Loaded when working in src/db')
+    ];
+    var L = { conflict: ['CONFLICT', '#F87171', '#2A1416'], stale: ['STALE PATH', '#FBBF24', '#2A2210'], dup: ['DUPLICATE', '#A0A7B4', '#1A1D24'], size: ['SIZE', '#FBBF24', '#2A2210'] };
+    var lint = [
+      ['conflict', 'Global says "Prefer pnpm in all repos" but api-server/CLAUDE.md says "Use npm for scripts".'],
+      ['stale', 'api-server/CLAUDE.md mentions docs/old-api.md, which no longer exists.'],
+      ['dup', '"Always run tests before committing" appears in both global and project files.'],
+      ['size', 'api-server/CLAUDE.md is 4.8k tokens. Consider moving the DB section to src/db/CLAUDE.md.']
+    ].map(function (x) {
+      var k = L[x[0]];
+      return { tag: k[0], text: x[1], tagStyle: 'align-self: flex-start; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; color: ' + k[1],
+        box: 'display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 10px; background: ' + k[2] };
+    });
+    return { accent: accent, tabs: tabs, tabNote: NOTES[tab], rows: rows, allow: allow, deny: deny, hooks: hooks, mcp: mcp, mds: mds, lint: lint };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Session detail</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+body{margin:0;background:#0E1014}
+a{color:#8AB4FF}a:hover{color:#B7D0FF}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #0E1014; color: #E7E9EE; font-family: Inter, system-ui, sans-serif">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; padding: 12px 28px; border-bottom: 1px solid #262A33; background: #12151B">
+    <span style="display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg>
+      Hangar
+    </span>
+    <nav aria-label="Main" style="display: flex; flex-wrap: wrap; gap: 4px; font-size: 14px">
+      <a href="Main.dc.html" style="padding: 8px 12px; border-radius: 8px; color: #A0A7B4; text-decoration: none">Dashboard</a>
+      <a href="Sessions.dc.html" style="padding: 8px 12px; border-radius: 8px; background: #1E222B; color: #E7E9EE; text-decoration: none; font-weight: 600">Sessions</a>
+      <a href="Config.dc.html" style="padding: 8px 12px; border-radius: 8px; color: #A0A7B4; text-decoration: none">Config</a>
+      <a href="Insights.dc.html" style="padding: 8px 12px; border-radius: 8px; color: #A0A7B4; text-decoration: none">Insights</a>
+      <a href="Library.dc.html" style="padding: 8px 12px; border-radius: 8px; color: #A0A7B4; text-decoration: none">Library</a>
+    </nav>
+  </header>
+
+  <main style="max-width: 1280px; margin: 0 auto; padding: 24px 28px 48px; display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px">
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 13px; color: #A0A7B4">api-server · feat/rate-limit</span>
+        <h1 style="margin: 0; font-size: 28px; font-weight: 700">Add rate limiting</h1>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: #A0A7B4">
+          <span>Opus</span><span>Started 42 min ago</span><span>214k tokens</span><span>$1.86</span><span>1 compaction</span>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 12px; border-radius: 10px; border: 1px solid #262A33; background: #161920">
+        <code style="font-family: 'JetBrains Mono', monospace; font-size: 13px">claude --resume 8f2c41a7</code>
+        <button type="button" style="min-height: 36px; padding: 0 12px; border: 0; border-radius: 8px; background: {{accent}}; color: #0E1014; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer">Copy</button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+      <section style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 18px; border-radius: 14px; background: #161920; border: 1px solid #262A33">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px">
+          <h2 style="margin: 0; font-size: 17px; font-weight: 700">Timeline</h2>
+          <div role="tablist" aria-label="Filter timeline" style="display: flex; flex-wrap: wrap; gap: 6px">
+            <sc-for list="{{filters}}" as="f" hint-placeholder-count="4">
+              <button type="button" role="tab" aria-selected="{{f.on}}" onClick="{{f.pick}}" style="{{f.style}}">{{f.label}}</button>
+            </sc-for>
+          </div>
+        </div>
+        <sc-for list="{{events}}" as="e" hint-placeholder-count="8">
+          <div style="display: flex; gap: 12px">
+            <span style="width: 52px; flex: none; padding-top: 3px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A0A7B4">{{e.t}}</span>
+            <span style="{{e.dot}}"></span>
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding-bottom: 10px; border-bottom: 1px solid #1E222B">
+              <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.04em; color: #A0A7B4">{{e.kind}}</span>
+              <span style="{{e.textStyle}}">{{e.text}}</span>
+              <sc-if value="{{e.hasNote}}" hint-placeholder-val="{{ false }}">
+                <span style="font-size: 12px; color: #A0A7B4">{{e.note}}</span>
+              </sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </section>
+
+      <aside style="flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+        <section style="display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 14px; background: #161920; border: 1px solid #262A33">
+          <h2 style="margin: 0; font-size: 16px; font-weight: 700">Context window</h2>
+          <div style="height: 10px; border-radius: 5px; background: #262A33; overflow: hidden"><div style="height: 100%; width: 64%; background: {{accent}}"></div></div>
+          <span style="font-size: 13px; color: #A0A7B4">64% used · compacted once at 21 min. Long sessions lose detail after compaction.</span>
+        </section>
+        <section style="display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 14px; background: #161920; border: 1px solid #262A33">
+          <h2 style="margin: 0; font-size: 16px; font-weight: 700">Files changed</h2>
+          <sc-for list="{{files}}" as="f" hint-placeholder-count="4">
+            <div style="display: flex; justify-content: space-between; gap: 10px; font-family: 'JetBrains Mono', monospace; font-size: 12px">
+              <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{f.p}}</span>
+              <span style="white-space: nowrap"><span style="color: #4ADE80">+{{f.a}}</span> <span style="color: #F87171">-{{f.d}}</span></span>
+            </div>
+          </sc-for>
+          <span style="font-size: 12px; color: #A0A7B4">Not committed yet</span>
+        </section>
+        <section style="display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 14px; background: #161920; border: 1px solid #262A33">
+          <h2 style="margin: 0; font-size: 16px; font-weight: 700">Task list</h2>
+          <span style="font-size: 14px; color: #A0A7B4; text-decoration: line-through">Read existing middleware</span>
+          <span style="font-size: 14px; color: #A0A7B4; text-decoration: line-through">Design limiter interface</span>
+          <span style="font-size: 14px; color: #E7E9EE; font-weight: 600">Add Redis-backed limiter middleware</span>
+          <span style="font-size: 14px; color: #E7E9EE">Write migration for rate_limits table</span>
+          <span style="font-size: 14px; color: #E7E9EE">Add tests</span>
+        </section>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#8AB4FF","options":["#8AB4FF","#5EEAD4","#C4B5FD","#FDBA74"]},"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { filter: 'all' };
+  }
+  renderVals() {
+    var self = this;
+    var accent = this.props.accent ?? '#8AB4FF';
+    var filter = this.state.filter;
+    var COLORS = { prompt: accent, tool: '#A0A7B4', edit: '#4ADE80', wait: '#FBBF24', error: '#F87171', system: '#C4B5FD' };
+    var RAW = [
+      { t: '0:00', k: 'prompt', kind: 'YOU', text: 'Add per-API-key rate limiting to the public routes. Use Redis.' },
+      { t: '0:01', k: 'tool', kind: 'READ', text: 'src/middleware/auth.ts, src/routes/index.ts, package.json', mono: true },
+      { t: '0:04', k: 'tool', kind: 'TASKS', text: 'Created 5 tasks' },
+      { t: '0:09', k: 'edit', kind: 'EDIT', text: 'src/middleware/rateLimit.ts (new file)', mono: true },
+      { t: '0:14', k: 'error', kind: 'BASH · FAILED', text: 'npm test  →  2 failed (ioredis not installed)', mono: true },
+      { t: '0:15', k: 'tool', kind: 'BASH', text: 'npm install ioredis', mono: true, note: 'Auto-approved by your allowlist' },
+      { t: '0:21', k: 'system', kind: 'COMPACTED', text: 'Context compacted at 92% → 31%' },
+      { t: '0:33', k: 'edit', kind: 'EDIT', text: 'src/routes/index.ts (+12 −2)', mono: true },
+      { t: '0:39', k: 'wait', kind: 'WAITING FOR YOU', text: 'Bash(npm run db:migrate)', mono: true, note: 'Approve or deny in your terminal. You have approved this 6 times. Add it to the allowlist?' }
+    ];
+    var match = function (e) {
+      if (filter === 'all') return true;
+      if (filter === 'you') return e.k === 'prompt' || e.k === 'wait';
+      if (filter === 'tools') return e.k === 'tool' || e.k === 'edit';
+      return e.k === 'error' || e.k === 'system';
+    };
+    var events = RAW.filter(match).map(function (e) {
+      return {
+        t: e.t, kind: e.kind, text: e.text, note: e.note || '', hasNote: !!e.note,
+        dot: 'flex: none; width: 10px; height: 10px; margin-top: 5px; border-radius: 50%; background: ' + COLORS[e.k],
+        textStyle: e.mono ? "font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #E7E9EE" : 'font-size: 14px; color: #E7E9EE; line-height: 1.5'
+      };
+    });
+    var filters = [['all', 'All'], ['you', 'You & approvals'], ['tools', 'Tools & edits'], ['issues', 'Errors & compactions']].map(function (f) {
+      var on = filter === f[0];
+      return { label: f[1], on: on, pick: function () { self.setState({ filter: f[0] }); },
+        style: 'min-height: 36px; padding: 0 12px; border-radius: 8px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; ' +
+          (on ? 'border: 1px solid ' + accent + '; background: #1E2738; color: #E7E9EE' : 'border: 1px solid #262A33; background: transparent; color: #A0A7B4') };
+    });
+    var files = [
+      { p: 'src/middleware/rateLimit.ts', a: 84, d: 0 },
+      { p: 'src/routes/index.ts', a: 12, d: 2 },
+      { p: 'package.json', a: 1, d: 0 },
+      { p: 'db/migrations/0012_rate_limits.sql', a: 18, d: 0 }
+    ];
+    return { accent: accent, events: events, filters: filters, files: files };
+  }
+}
+</script>
+</body>
+</html>

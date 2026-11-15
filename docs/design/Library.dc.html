@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Library</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+body{margin:0;background:#0E1014}
+a{color:#8AB4FF}a:hover{color:#B7D0FF}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #0E1014; color: #E7E9EE; font-family: Inter, system-ui, sans-serif">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; padding: 12px 28px; border-bottom: 1px solid #262A33; background: #12151B">
+    <span style="display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg>
+      Hangar
+    </span>
+    <nav aria-label="Main" style="display: flex; flex-wrap: wrap; gap: 4px; font-size: 14px">
+      <a href="Main.dc.html" style="padding: 8px 12px; border-radius: 8px; color: #A0A7B4; text-decoration: none">Dashboard</a>
+      <a href="Sessions.dc.html" style="padding: 8px 12px; border-radius: 8px; color: #A0A7B4; text-decoration: none">Sessions</a>
+      <a href="Config.dc.html" style="padding: 8px 12px; border-radius: 8px; color: #A0A7B4; text-decoration: none">Config</a>
+      <a href="Insights.dc.html" style="padding: 8px 12px; border-radius: 8px; color: #A0A7B4; text-decoration: none">Insights</a>
+      <a href="Library.dc.html" style="padding: 8px 12px; border-radius: 8px; background: #1E222B; color: #E7E9EE; text-decoration: none; font-weight: 600">Library</a>
+    </nav>
+  </header>
+
+  <main style="max-width: 1280px; margin: 0 auto; padding: 24px 28px 48px; display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <h1 style="margin: 0; font-size: 28px; font-weight: 700">Library</h1>
+        <span style="font-size: 14px; color: #A0A7B4">Everything you've built for Claude Code, from every repo, in one place.</span>
+      </div>
+      <div role="tablist" aria-label="Kind" style="display: flex; flex-wrap: wrap; gap: 6px">
+        <sc-for list="{{tabs}}" as="t" hint-placeholder-count="4">
+          <button type="button" role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+      <section style="flex: 999 1 560px; min-width: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px">
+        <sc-for list="{{items}}" as="i" hint-placeholder-count="4">
+          <div style="display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 12px; background: #161920; border: 1px solid #262A33">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 600">{{i.name}}</span>
+            <span style="font-size: 14px; color: #C9CED7; line-height: 1.45">{{i.desc}}</span>
+            <span style="font-size: 12px; color: #A0A7B4">{{i.where}}</span>
+            <div style="display: flex; gap: 8px; margin-top: 4px">
+              <button type="button" style="min-height: 36px; padding: 0 12px; border: 1px solid #262A33; border-radius: 8px; background: #1E222B; color: #E7E9EE; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Copy to repo…</button>
+              <button type="button" style="min-height: 36px; padding: 0 12px; border: 1px solid #262A33; border-radius: 8px; background: transparent; color: #A0A7B4; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Make global</button>
+            </div>
+          </div>
+        </sc-for>
+      </section>
+
+      <aside style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+        <section style="display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 14px; background: #161920; border: 1px solid #262A33">
+          <h2 style="margin: 0; font-size: 16px; font-weight: 700">Repo templates</h2>
+          <span style="font-size: 13px; color: #A0A7B4">A ready-made .claude/ folder for new projects.</span>
+          <div style="display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; background: #12151B">
+            <span style="font-weight: 600; font-size: 14px">Node service</span>
+            <span style="font-size: 12px; color: #A0A7B4">CLAUDE.md · 3 commands · prettier hook · test allowlist</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; background: #12151B">
+            <span style="font-weight: 600; font-size: 14px">Learning project</span>
+            <span style="font-size: 12px; color: #A0A7B4">Teaching-mode CLAUDE.md · LEARNING.md · review agent</span>
+          </div>
+          <button type="button" style="min-height: 40px; border: 1px solid #262A33; border-radius: 8px; background: #1E222B; color: #E7E9EE; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Apply template to a repo…</button>
+        </section>
+        <section style="display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 14px; background: #161920; border: 1px solid #262A33">
+          <h2 style="margin: 0; font-size: 16px; font-weight: 700">Backup</h2>
+          <span style="font-size: 13px; color: #A0A7B4; line-height: 1.5">~/.claude settings, CLAUDE.md, commands, agents and skills are versioned in a private git repo. Sessions and secrets are excluded.</span>
+          <span style="font-size: 13px"><span style="color: #4ADE80; font-weight: 600">Backed up</span> 2 h ago · 41 versions</span>
+          <a href="Library.dc.html" style="font-size: 14px">View history →</a>
+        </section>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#8AB4FF","options":["#8AB4FF","#5EEAD4","#C4B5FD","#FDBA74"]},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tab: 'commands' };
+  }
+  renderVals() {
+    var self = this;
+    var accent = this.props.accent ?? '#8AB4FF';
+    var tab = this.state.tab;
+    var DATA = {
+      commands: [
+        { name: '/review', desc: 'Review the current diff for bugs, missing tests and naming.', where: 'Global' },
+        { name: '/migrate', desc: 'Create and run a DB migration safely, with a rollback plan.', where: 'api-server' },
+        { name: '/explain', desc: 'Teaching mode: explain the concept before writing code.', where: 'folderrag' },
+        { name: '/release-notes', desc: 'Draft release notes from commits since the last tag.', where: 'api-server, web-app' }
+      ],
+      agents: [
+        { name: 'test-writer', desc: 'Writes focused unit tests for changed files.', where: 'Global' },
+        { name: 'mentor', desc: 'Reviews code you wrote and suggests one improvement.', where: 'folderrag' }
+      ],
+      skills: [
+        { name: 'db-safety', desc: 'Rules and scripts for touching production-like databases.', where: 'api-server' },
+        { name: 'ui-review', desc: 'Checks screens for accessibility and layout issues.', where: 'web-app' }
+      ],
+      hooks: [
+        { name: 'prettier-on-edit', desc: 'PostToolUse · Edit → npx prettier --write', where: 'api-server, web-app, folderrag' },
+        { name: 'notify-on-stop', desc: 'Stop → desktop notification', where: 'Global' },
+        { name: 'block-prod-db', desc: 'PreToolUse · Bash → refuse commands against prod', where: 'api-server' }
+      ]
+    };
+    var tabs = [['commands', 'Commands'], ['agents', 'Agents'], ['skills', 'Skills'], ['hooks', 'Hooks']].map(function (t) {
+      var on = tab === t[0];
+      return { label: t[1] + ' · ' + DATA[t[0]].length, on: on, pick: function () { self.setState({ tab: t[0] }); },
+        style: 'min-height: 40px; padding: 0 14px; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; ' +
+          (on ? 'border: 1px solid ' + accent + '; background: #1E2738; color: #E7E9EE' : 'border: 1px solid #262A33; background: transparent; color: #A0A7B4') };
+    });
+    var items = DATA[tab].map(function (i) { return Object.assign({}, i, { where: 'Found in: ' + i.where }); });
+    return { accent: accent, tabs: tabs, items: items };
+  }
+}
+</script>
+</body>
+</html>

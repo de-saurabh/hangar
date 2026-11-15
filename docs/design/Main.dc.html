@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Dashboard</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+body{margin:0;background:#0E1014}
+a{color:#8AB4FF}a:hover{color:#B7D0FF}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #0E1014; color: #E7E9EE; font-family: Inter, system-ui, sans-serif">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; padding: 12px 28px; border-bottom: 1px solid #262A33; background: #12151B">
+    <span style="display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg>
+      Hangar
+    </span>
+    <nav aria-label="Main" style="display: flex; flex-wrap: wrap; gap: 4px; font-size: 14px">
+      <a href="Main.dc.html" style="padding: 8px 12px; border-radius: 8px; background: #1E222B; color: #E7E9EE; text-decoration: none; font-weight: 600">Dashboard</a>
+      <a href="Sessions.dc.html" style="padding: 8px 12px; border-radius: 8px; color: #A0A7B4; text-decoration: none">Sessions</a>
+      <a href="Config.dc.html" style="padding: 8px 12px; border-radius: 8px; color: #A0A7B4; text-decoration: none">Config</a>
+      <a href="Insights.dc.html" style="padding: 8px 12px; border-radius: 8px; color: #A0A7B4; text-decoration: none">Insights</a>
+      <a href="Library.dc.html" style="padding: 8px 12px; border-radius: 8px; color: #A0A7B4; text-decoration: none">Library</a>
+    </nav>
+    <label for="gsearch" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search</label>
+    <input id="gsearch" type="search" placeholder="Search sessions, CLAUDE.md, tasks…  ⌘K" style="flex: 1 1 260px; max-width: 420px; margin-left: auto; min-height: 40px; padding: 0 12px; border: 1px solid #262A33; border-radius: 8px; background: #0E1014; color: #E7E9EE; font: inherit; font-size: 14px">
+  </header>
+
+  <main style="max-width: 1280px; margin: 0 auto; padding: 24px 28px 48px; display: flex; flex-direction: column; gap: 20px">
+    <div role="alert" style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 14px 16px; border-radius: 12px; border: 1px solid #FBBF24; background: #2A2210">
+      <span style="width: 10px; height: 10px; border-radius: 50%; background: #FBBF24"></span>
+      <span style="flex: 1 1 360px; font-size: 14px; line-height: 1.5"><strong style="color: #FDE68A">api-server is waiting for you.</strong> It wants to run <code style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #FDE68A">Bash(npm run db:migrate)</code> · waiting 3 min</span>
+      <a href="Session.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 8px; background: #FBBF24; color: #1A1406; font-size: 14px; font-weight: 700; text-decoration: none">Open session</a>
+      <button type="button" style="min-height: 40px; padding: 0 14px; border: 1px solid #5C4A1A; border-radius: 8px; background: transparent; color: #FDE68A; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Copy resume command</button>
+    </div>
+
+    <section aria-label="Today" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px">
+      <sc-for list="{{stats}}" as="s" hint-placeholder-count="4">
+        <div style="display: flex; flex-direction: column; gap: 4px; padding: 16px; border-radius: 12px; background: #161920; border: 1px solid #262A33">
+          <span style="font-size: 13px; color: #A0A7B4">{{s.label}}</span>
+          <span style="font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums">{{s.v}}</span>
+          <span style="font-size: 12px; color: #A0A7B4">{{s.sub}}</span>
+        </div>
+      </sc-for>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: 14px; background: #161920; border: 1px solid #262A33">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 10px">
+        <h2 style="margin: 0; font-size: 17px; font-weight: 700">Live sessions</h2>
+        <a href="Sessions.dc.html" style="font-size: 13px">See all 7 on the board →</a>
+      </div>
+      <sc-for list="{{sessions}}" as="x" hint-placeholder-count="3">
+        <a href="Session.dc.html" style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding: 12px 14px; border-radius: 10px; border: 1px solid #262A33; background: #12151B; color: #E7E9EE; text-decoration: none">
+          <span style="{{x.pill}}">{{x.status}}</span>
+          <span style="flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+            <span style="font-weight: 600; font-size: 15px">{{x.repo}} <span style="font-weight: 400; color: #A0A7B4">· {{x.title}}</span></span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A0A7B4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{x.now}}</span>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 4px; width: 150px">
+            <span style="font-size: 12px; color: #A0A7B4">Context {{x.ctx}}%</span>
+            <span style="height: 6px; border-radius: 3px; background: #262A33; overflow: hidden"><span style="{{x.bar}}"></span></span>
+          </span>
+          <span style="width: 120px; font-size: 12px; color: #A0A7B4; text-align: right">{{x.meta}}</span>
+        </a>
+      </sc-for>
+    </section>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+      <section style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px">
+          <h2 style="margin: 0; font-size: 17px; font-weight: 700">Repos</h2>
+          <button type="button" style="min-height: 36px; padding: 0 12px; border: 1px solid #262A33; border-radius: 8px; background: #161920; color: #E7E9EE; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">+ Add repo</button>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px">
+          <sc-for list="{{repos}}" as="r" hint-placeholder-count="4">
+            <a href="Config.dc.html" style="display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 12px; background: #161920; border: 1px solid #262A33; color: #E7E9EE; text-decoration: none">
+              <span style="display: flex; justify-content: space-between; gap: 8px">
+                <span style="font-weight: 700; font-size: 15px">{{r.name}}</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A0A7B4">{{r.branch}}</span>
+              </span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A0A7B4">{{r.path}}</span>
+              <span style="font-size: 13px; color: #C9CED7">{{r.meta}}</span>
+              <sc-if value="{{r.warn}}" hint-placeholder-val="{{ false }}">
+                <span style="font-size: 12px; color: #FBBF24">{{r.warnText}}</span>
+              </sc-if>
+            </a>
+          </sc-for>
+        </div>
+      </section>
+
+      <aside style="flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+        <section style="display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 14px; background: #161920; border: 1px solid #262A33">
+          <h2 style="margin: 0; font-size: 17px; font-weight: 700">Tasks across repos</h2>
+          <sc-for list="{{tasks}}" as="t" hint-placeholder-count="6">
+            <div style="display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 1.4">
+              <span style="{{t.box}}"></span>
+              <span style="flex: 1; min-width: 0; {{t.textStyle}}">{{t.text}}</span>
+              <span style="font-size: 11px; color: #A0A7B4; white-space: nowrap">{{t.repo}}</span>
+            </div>
+          </sc-for>
+        </section>
+        <section style="display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 14px; background: #161920; border: 1px solid #262A33">
+          <h2 style="margin: 0; font-size: 17px; font-weight: 700">Recent CLAUDE.md changes</h2>
+          <sc-for list="{{changes}}" as="c" hint-placeholder-count="3">
+            <div style="display: flex; flex-direction: column; gap: 4px; padding: 10px; border-radius: 8px; background: #12151B">
+              <span style="display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: #A0A7B4"><span style="font-family: 'JetBrains Mono', monospace">{{c.file}}</span><span>{{c.when}}</span></span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4ADE80">+ {{c.add}}</span>
+              <sc-if value="{{c.hasDel}}" hint-placeholder-val="{{ false }}">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #F87171">- {{c.del}}</span>
+              </sc-if>
+            </div>
+          </sc-for>
+        </section>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#8AB4FF","options":["#8AB4FF","#5EEAD4","#C4B5FD","#FDBA74"]},"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var accent = this.props.accent ?? '#8AB4FF';
+    var pill = function (c, bg) { return 'padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; color: ' + c + '; background: ' + bg; };
+    var stats = [
+      { label: 'Active sessions', v: '3', sub: '1 waiting for you' },
+      { label: 'Tokens today', v: '1.8M', sub: 'across 4 repos' },
+      { label: 'Est. cost today', v: '$4.12', sub: 'budget $10 / day' },
+      { label: 'Open tasks', v: '9', sub: '2 in progress' }
+    ];
+    var sessions = [
+      { repo: 'api-server', title: 'Add rate limiting', status: 'Waiting for you', pill: pill('#1A1406', '#FBBF24'), now: 'Permission: Bash(npm run db:migrate)', ctx: 64, meta: 'Opus · 42 min' },
+      { repo: 'folderrag', title: 'M2 chunking', status: 'Running', pill: pill('#052E16', '#4ADE80'), now: 'Edit src/plugins/chunkers/recursive.ts', ctx: 38, meta: 'Sonnet · 12 min' },
+      { repo: 'web-app', title: 'Fix flaky login test', status: 'Idle', pill: pill('#E7E9EE', '#262A33'), now: 'Last: ran npm test (2 failed)', ctx: 87, meta: 'Sonnet · 1 h 05' }
+    ].map(function (s) {
+      var c = s.ctx > 80 ? '#F87171' : accent;
+      return Object.assign({}, s, { bar: 'display: block; height: 100%; width: ' + s.ctx + '%; background: ' + c });
+    });
+    var repos = [
+      { name: 'api-server', branch: 'feat/rate-limit', path: '~/code/api-server', meta: '6 sessions this week · 3 open tasks · 4 commands' },
+      { name: 'folderrag', branch: 'main', path: '~/code/folderrag', meta: '9 sessions this week · 4 open tasks · 2 agents' },
+      { name: 'web-app', branch: 'fix/login-test', path: '~/code/web-app', meta: '3 sessions this week · 2 open tasks', warn: true, warnText: 'CLAUDE.md is 6.1k tokens, loaded every session' },
+      { name: 'dotfiles', branch: 'main', path: '~/dotfiles', meta: '1 session this week', warn: true, warnText: 'settings.local.json allows Bash(*)' }
+    ].map(function (r) { return Object.assign({ warn: false, warnText: '' }, r); });
+    var box = function (state) {
+      var base = 'flex: none; width: 16px; height: 16px; margin-top: 2px; border-radius: 4px; ';
+      if (state === 'done') return base + 'background: #4ADE80; border: 1px solid #4ADE80';
+      if (state === 'doing') return base + 'background: transparent; border: 2px solid ' + accent;
+      return base + 'background: transparent; border: 1px solid #4B5260';
+    };
+    var tasks = [
+      { text: 'Add Redis-backed limiter middleware', repo: 'api-server', s: 'doing' },
+      { text: 'Write migration for rate_limits table', repo: 'api-server', s: 'todo' },
+      { text: 'Recursive chunker passes tests', repo: 'folderrag', s: 'doing' },
+      { text: 'Token counter util', repo: 'folderrag', s: 'done' },
+      { text: 'Stabilise login test timing', repo: 'web-app', s: 'todo' },
+      { text: 'Update CLAUDE.md test section', repo: 'web-app', s: 'todo' }
+    ].map(function (t) { return { text: t.text, repo: t.repo, box: box(t.s), textStyle: t.s === 'done' ? 'color: #A0A7B4; text-decoration: line-through' : 'color: #E7E9EE' }; });
+    var changes = [
+      { file: 'folderrag/CLAUDE.md', when: '20 min ago', add: 'Teaching mode: leave TODO(you) stubs with a failing test', del: '' },
+      { file: '~/.claude/CLAUDE.md', when: 'Yesterday', add: 'Prefer pnpm in all repos', del: 'Prefer npm in all repos' },
+      { file: 'api-server/CLAUDE.md', when: 'Mon', add: 'Run migrations only via npm run db:migrate', del: '' }
+    ].map(function (c) { return Object.assign({}, c, { hasDel: !!c.del }); });
+    return { accent: accent, stats: stats, sessions: sessions, repos: repos, tasks: tasks, changes: changes };
+  }
+}
+</script>
+</body>
+</html>

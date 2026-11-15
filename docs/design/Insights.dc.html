@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Insights</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+body{margin:0;background:#0E1014}
+a{color:#8AB4FF}a:hover{color:#B7D0FF}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #0E1014; color: #E7E9EE; font-family: Inter, system-ui, sans-serif">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; padding: 12px 28px; border-bottom: 1px solid #262A33; background: #12151B">
+    <span style="display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg>
+      Hangar
+    </span>
+    <nav aria-label="Main" style="display: flex; flex-wrap: wrap; gap: 4px; font-size: 14px">
+      <a href="Main.dc.html" style="padding: 8px 12px; border-radius: 8px; color: #A0A7B4; text-decoration: none">Dashboard</a>
+      <a href="Sessions.dc.html" style="padding: 8px 12px; border-radius: 8px; color: #A0A7B4; text-decoration: none">Sessions</a>
+      <a href="Config.dc.html" style="padding: 8px 12px; border-radius: 8px; color: #A0A7B4; text-decoration: none">Config</a>
+      <a href="Insights.dc.html" style="padding: 8px 12px; border-radius: 8px; background: #1E222B; color: #E7E9EE; text-decoration: none; font-weight: 600">Insights</a>
+      <a href="Library.dc.html" style="padding: 8px 12px; border-radius: 8px; color: #A0A7B4; text-decoration: none">Library</a>
+    </nav>
+  </header>
+
+  <main style="max-width: 1280px; margin: 0 auto; padding: 24px 28px 48px; display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px">
+      <h1 style="margin: 0; font-size: 28px; font-weight: 700">Insights · last 14 days</h1>
+      <div role="tablist" aria-label="Metric" style="display: flex; gap: 6px">
+        <sc-for list="{{metrics}}" as="m" hint-placeholder-count="2">
+          <button type="button" role="tab" aria-selected="{{m.on}}" onClick="{{m.pick}}" style="{{m.style}}">{{m.label}}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <section style="display: flex; flex-direction: column; gap: 12px; padding: 18px; border-radius: 14px; background: #161920; border: 1px solid #262A33">
+      <div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 10px">
+        <h2 style="margin: 0; font-size: 17px; font-weight: 700">{{chartTitle}}</h2>
+        <span style="font-size: 13px; color: #A0A7B4">{{chartTotal}}</span>
+      </div>
+      <div role="img" aria-label="{{chartTitle}} per day" style="display: flex; align-items: flex-end; gap: 8px; height: 180px; padding-top: 10px; border-bottom: 1px solid #262A33">
+        <sc-for list="{{bars}}" as="b" hint-placeholder-count="14">
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; height: 100%">
+            <div style="{{b.style}}"></div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display: flex; gap: 8px">
+        <sc-for list="{{bars}}" as="b" hint-placeholder-count="14">
+          <span style="flex: 1; min-width: 0; text-align: center; font-size: 11px; color: #A0A7B4">{{b.d}}</span>
+        </sc-for>
+      </div>
+    </section>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+      <section style="flex: 1 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: 14px; background: #161920; border: 1px solid #262A33">
+        <h2 style="margin: 0; font-size: 17px; font-weight: 700">By repo</h2>
+        <sc-for list="{{byRepo}}" as="r" hint-placeholder-count="4">
+          <div style="display: flex; align-items: center; gap: 12px; font-size: 14px">
+            <span style="width: 110px">{{r.name}}</span>
+            <span style="flex: 1; height: 10px; border-radius: 4px; background: #262A33; overflow: hidden"><span style="{{r.bar}}"></span></span>
+            <span style="width: 70px; text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 13px">{{r.v}}</span>
+          </div>
+        </sc-for>
+      </section>
+
+      <section style="flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: 14px; background: #161920; border: 1px solid #262A33">
+        <h2 style="margin: 0; font-size: 17px; font-weight: 700">Allowlist suggestions</h2>
+        <span style="font-size: 13px; color: #A0A7B4">Commands you approve by hand again and again.</span>
+        <sc-for list="{{suggest}}" as="s" hint-placeholder-count="3">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 12px; border-radius: 10px; background: #12151B; border: 1px solid #262A33">
+            <code style="flex: 1 1 200px; font-family: 'JetBrains Mono', monospace; font-size: 13px">{{s.cmd}}</code>
+            <span style="font-size: 12px; color: #A0A7B4">{{s.n}}</span>
+            <button type="button" style="min-height: 36px; padding: 0 12px; border: 1px solid #262A33; border-radius: 8px; background: #1E222B; color: #E7E9EE; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">{{s.action}}</button>
+          </div>
+        </sc-for>
+      </section>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+      <section style="flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: 14px; background: #161920; border: 1px solid #262A33">
+        <h2 style="margin: 0; font-size: 17px; font-weight: 700">This week you shipped</h2>
+        <sc-for list="{{shipped}}" as="s" hint-placeholder-count="3">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <span style="font-size: 13px; font-weight: 700; color: #C9CED7">{{s.repo}}</span>
+            <span style="font-size: 14px; line-height: 1.5">{{s.text}}</span>
+          </div>
+        </sc-for>
+      </section>
+      <section style="flex: 1 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: 14px; background: #161920; border: 1px solid #262A33">
+        <h2 style="margin: 0; font-size: 17px; font-weight: 700">Where Claude got stuck</h2>
+        <sc-for list="{{stuck}}" as="s" hint-placeholder-count="3">
+          <div style="display: flex; justify-content: space-between; gap: 12px; font-size: 14px">
+            <span>{{s.what}}</span><span style="color: #A0A7B4; white-space: nowrap">{{s.n}}</span>
+          </div>
+        </sc-for>
+        <span style="font-size: 13px; color: #A0A7B4">Tip: add the test DB setup steps to web-app/CLAUDE.md.</span>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#8AB4FF","options":["#8AB4FF","#5EEAD4","#C4B5FD","#FDBA74"]},"$preview":{"width":1440,"height":1150}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { metric: 'cost' };
+  }
+  renderVals() {
+    var self = this;
+    var accent = this.props.accent ?? '#8AB4FF';
+    var metric = this.state.metric;
+    var days = ['2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15'];
+    var cost = [2.1, 3.4, 1.2, 0.4, 0.0, 4.8, 5.2, 3.9, 6.1, 2.2, 0.3, 0.8, 4.4, 4.1];
+    var tok = cost.map(function (c) { return Math.round(c * 430) / 1000; });
+    var vals = metric === 'cost' ? cost : tok;
+    var max = Math.max.apply(null, vals);
+    var bars = vals.map(function (v, i) {
+      var last = i === vals.length - 1;
+      return { d: days[i], style: 'width: 100%; border-radius: 4px 4px 0 0; height: ' + Math.max(2, Math.round(v / max * 100)) + '%; background: ' + (last ? accent : '#3A4256') };
+    });
+    var total = vals.reduce(function (a, b) { return a + b; }, 0);
+    var R = [['api-server', 16.2, 7.0], ['folderrag', 12.4, 5.3], ['web-app', 9.1, 3.9], ['dotfiles', 1.2, 0.5]];
+    var rmax = metric === 'cost' ? 16.2 : 7.0;
+    var byRepo = R.map(function (r) {
+      var v = metric === 'cost' ? r[1] : r[2];
+      return { name: r[0], v: metric === 'cost' ? '$' + v.toFixed(2) : v.toFixed(1) + 'M', bar: 'display: block; height: 100%; width: ' + Math.round(v / rmax * 100) + '%; background: ' + accent };
+    });
+    var metrics = [['cost', 'Cost'], ['tokens', 'Tokens']].map(function (m) {
+      var on = metric === m[0];
+      return { label: m[1], on: on, pick: function () { self.setState({ metric: m[0] }); },
+        style: 'min-height: 40px; padding: 0 14px; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; ' +
+          (on ? 'border: 1px solid ' + accent + '; background: #1E2738; color: #E7E9EE' : 'border: 1px solid #262A33; background: transparent; color: #A0A7B4') };
+    });
+    var suggest = [
+      { cmd: 'Bash(npm test:*)', n: 'approved 37× in 3 repos', action: 'Add to global allowlist' },
+      { cmd: 'Bash(npm run db:migrate)', n: 'approved 6× in api-server', action: 'Add to api-server' },
+      { cmd: 'Bash(git push:*)', n: 'approved 14×', action: 'Keep asking (risky)' }
+    ];
+    var shipped = [
+      { repo: 'api-server', text: 'Rate limiting (in progress), dependency bump, N+1 fix on /orders.' },
+      { repo: 'folderrag', text: 'Milestones M0 and M1: project skeleton and folder walker with change detection.' },
+      { repo: 'web-app', text: 'Onboarding flow started; login test still flaky.' }
+    ];
+    var stuck = [
+      { what: 'web-app tests need a running test DB', n: '5 sessions' },
+      { what: 'Context over 80% before finishing', n: '4 sessions' },
+      { what: 'linear MCP auth expired', n: '3 failed calls' }
+    ];
+    return {
+      accent: accent, metrics: metrics, bars: bars, byRepo: byRepo, suggest: suggest, shipped: shipped, stuck: stuck,
+      chartTitle: metric === 'cost' ? 'Estimated cost per day' : 'Tokens per day (millions)',
+      chartTotal: metric === 'cost' ? 'Total $' + total.toFixed(2) + ' · budget $10/day' : 'Total ' + total.toFixed(1) + 'M tokens'
+    };
+  }
+}
+</script>
+</body>
+</html>
