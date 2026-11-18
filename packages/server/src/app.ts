@@ -37,6 +37,7 @@ import { CopyError, planCopy, type CopyTarget } from './libraryCopy.js'
 import { applyFiles, previewFiles } from './settingsWrite.js'
 import { planTemplate, TEMPLATES } from './templates.js'
 import { runBackup, status as backupStatus } from './backup.js'
+import { checkServer, rawServer, type Fetcher } from './mcpCheck.js'
 import { ApprovalTracker } from './approvals.js'
 import { AllowlistError, applyAdd, isAllowed, previewAdd, targetPath, type AllowTarget } from './allowlist.js'
 import { recentCommits } from './sources/gitHistory.js'
@@ -78,6 +79,8 @@ export interface AppOptions {
   startLive?: boolean
   /** Override the desktop notification sender (tests). */
   sendDesktop?: (title: string, message: string) => void
+  /** Test seam for MCP health checks. */
+  mcpFetch?: Fetcher
 }
 
 export function createApp(opts: AppOptions) {
@@ -230,6 +233,19 @@ export function createApp(opts: AppOptions) {
     if (!repo) throw new RepoError('Repo not found', 404)
     const claudeJsonPath = opts.claudeHome ? join(opts.claudeHome, '.claude.json') : defaultClaudeJsonPath()
     res.json(await readMcp({ claudeJsonPath, repoPath: repo.path }))
+  })
+
+  /** Explicit click only: one health check of one MCP server. The only outbound request Hangar can make. */
+  app.post('/api/repos/:id/mcp/check', async (req, res) => {
+    const { repos } = await loadConfig()
+    const repo = repos.find((r) => r.id === req.params.id)
+    if (!repo) throw new RepoError('Repo not found', 404)
+    const b = (req.body ?? {}) as { name?: unknown; scope?: unknown }
+    if (typeof b.name !== 'string' || (b.scope !== 'user' && b.scope !== 'local' && b.scope !== 'project')) throw new RepoError('Body must be { "name": string, "scope": "user" | "local" | "project" }', 400)
+    const claudeJsonPath = opts.claudeHome ? join(opts.claudeHome, '.claude.json') : defaultClaudeJsonPath()
+    const raw = await rawServer(claudeJsonPath, repo.path, b.scope, b.name)
+    if (!raw) throw new RepoError('MCP server not found', 404)
+    res.set('Cache-Control', 'no-store').json(await checkServer(raw, opts.mcpFetch))
   })
 
   /** Preview of installing (or removing) Hangar's hooks. Read-only. */

@@ -95,3 +95,10 @@ export function buildMcpServers(input: McpInput): McpServer[] {
   }
   return servers
 }
+
+/** Result of a user-triggered health check. Never includes URLs, headers or output from the server. */
+export interface McpHealth {
+  ok: boolean
+  summary: string
+  checkedAt: string
+}
