@@ -148,3 +148,18 @@ export function resolveStatus(hook: LiveState | undefined, reg: RegistryEntry | 
   }
   return hook
 }
+
+/** Preview of installing/removing Hangar's hooks in settings.json (GET /api/hooks/install). */
+export interface InstallPreview {
+  settingsPath: string
+  exists: boolean
+  installed: boolean
+  url: string
+  events: readonly string[]
+  /** What clicking the button would do. */
+  action: 'install' | 'uninstall'
+  /** Unified diff of the proposed change. Empty when nothing would change. */
+  diff: string
+  /** Hash of the current file; send it back to confirm you saw this diff. */
+  token: string
+}

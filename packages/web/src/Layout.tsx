@@ -1,11 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, Outlet } from '@tanstack/react-router'
 import { api } from './api'
+import { useLiveFeed } from './live'
 
 const navLink = 'rounded-lg px-3 py-2 text-sm text-muted no-underline hover:text-text'
 const navActive = { className: 'rounded-lg bg-[#1e222b] px-3 py-2 text-sm font-semibold text-text no-underline' }
 
 export function Layout() {
+  useLiveFeed()
   return (
     <div className="min-h-screen">
       <header className="flex flex-wrap items-center gap-x-7 gap-y-3 border-b border-border bg-surface-2 px-7 py-3">

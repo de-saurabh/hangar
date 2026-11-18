@@ -3,7 +3,7 @@ import { copyFile, mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { createTwoFilesPatch } from 'diff'
 import { applyEdits, modify, parse, type ParseError } from 'jsonc-parser'
-import { HOOK_EVENTS } from '@hangar/shared'
+import { HOOK_EVENTS, type InstallPreview } from '@hangar/shared'
 import { hangarHome } from './config.js'
 
 /** Marks hook handlers Hangar owns; port-independent so a port change is just a reinstall. */
@@ -82,19 +82,6 @@ export function computeUninstall(text: string): string {
 
 const sha = (s: string) => createHash('sha256').update(s).digest('hex')
 
-export interface InstallPreview {
-  settingsPath: string
-  exists: boolean
-  installed: boolean
-  url: string
-  events: readonly string[]
-  /** What clicking the button would do. */
-  action: 'install' | 'uninstall'
-  /** Unified diff of the proposed change. Empty when nothing would change. */
-  diff: string
-  /** Hash of the current file; send it back to confirm you saw this diff. */
-  token: string
-}
 
 async function readText(path: string): Promise<string | undefined> {
   try {
