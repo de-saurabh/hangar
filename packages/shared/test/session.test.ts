@@ -1,0 +1,182 @@
+import { describe, expect, it } from 'vitest'
+import { applyLine, createSessionState, MAX_EVENTS, summarize, type SessionState } from '../src/index'
+
+const T = (n: number) => `2026-01-01T10:00:${String(n).padStart(2, '0')}.000Z`
+const base = { cwd: 'C:\\code\\demo', gitBranch: 'main', version: '9.9.9', entrypoint: 'cli' }
+
+const prompt = (text: string, n: number, extra: object = {}) => ({ type: 'user', uuid: `u${n}`, timestamp: T(n), message: { role: 'user', content: text }, ...base, ...extra })
+const toolUse = (id: string, name: string, input: object, n: number, msgId = `m${n}`, usage?: object) => ({
+  type: 'assistant', uuid: `a${n}`, timestamp: T(n), ...base,
+  message: { id: msgId, model: 'claude-test', content: [{ type: 'tool_use', id, name, input }], ...(usage ? { usage } : {}) },
+})
+const toolResult = (id: string, n: number, opts: { isError?: boolean; text?: string; result?: object } = {}) => ({
+  type: 'user', uuid: `r${n}`, timestamp: T(n), ...base,
+  message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: id, is_error: opts.isError, content: opts.text ?? 'ok' }] },
+  ...(opts.result ? { toolUseResult: opts.result } : {}),
+})
+
+function run(lines: unknown[], keepEvents = true): SessionState {
+  const s = createSessionState('sess-1', { keepEvents })
+  for (const l of lines) applyLine(s, l)
+  return s
+}
+
+describe('titles and prompts', () => {
+  it('prefers custom title, then ai title, then the first prompt', () => {
+    expect(summarize(run([prompt('Add rate limiting to the API', 1)]))).toMatchObject({ title: 'Add rate limiting to the API', titleSource: 'prompt' })
+    expect(summarize(run([prompt('x', 1), { type: 'ai-title', aiTitle: 'AI title' }]))).toMatchObject({ title: 'AI title', titleSource: 'ai' })
+    expect(summarize(run([{ type: 'ai-title', aiTitle: 'AI title' }, { type: 'custom-title', customTitle: 'Mine' }, { type: 'custom-title', customTitle: 'Renamed' }]))).toMatchObject({ title: 'Renamed', titleSource: 'custom' })
+    expect(summarize(run([]))).toMatchObject({ title: 'Untitled session', titleSource: 'none' })
+  })
+
+  it('records prompts as YOU events and skips meta and tool-result-only user lines', () => {
+    const s = run([prompt('hello', 1), prompt('meta stuff', 2, { isMeta: true }), toolResult('t1', 3)])
+    expect(s.events.map((e) => [e.kind, e.label, e.text])).toEqual([['prompt', 'YOU', 'hello']])
+    expect(summarize(s).prompts).toBe(1)
+  })
+
+  it('collects session facts from lines and tracks the time range', () => {
+    const sum = summarize(run([prompt('a', 5), prompt('b', 2)]))
+    expect(sum).toMatchObject({ id: 'sess-1', cwd: base.cwd, gitBranch: 'main', version: '9.9.9', entrypoint: 'cli', startedAt: T(2), lastEventAt: T(5) })
+  })
+})
+
+describe('tools', () => {
+  it('turns tool_use blocks into labelled events', () => {
+    const s = run([
+      toolUse('t1', 'Read', { file_path: 'src/a.ts' }, 1),
+      toolUse('t2', 'Bash', { command: 'npm test' }, 2),
+      toolUse('t3', 'Grep', { pattern: 'TODO', path: 'src' }, 3),
+      toolUse('t4', 'mcp__github__create_issue', {}, 4),
+    ])
+    expect(s.events.map((e) => [e.label, e.text])).toEqual([
+      ['READ', 'src/a.ts'],
+      ['BASH', 'npm test'],
+      ['SEARCH', 'TODO in src'], // whitespace is collapsed for display
+      ['MCP', 'github · create_issue'],
+    ])
+    expect(summarize(s).toolCalls).toBe(4)
+  })
+
+  it('marks the originating tool event failed when its result is an error', () => {
+    const s = run([toolUse('t1', 'Bash', { command: 'npm test' }, 1), toolResult('t1', 2, { isError: true, text: '2 failed: ioredis not installed' })])
+    expect(s.events[0]).toMatchObject({ failed: true, note: '2 failed: ioredis not installed' })
+    expect(s.events).toHaveLength(1)
+  })
+
+  it('adds an ERROR event for a failed result whose call it never saw', () => {
+    const s = run([toolResult('unknown', 1, { isError: true, text: 'boom' })])
+    expect(s.events[0]).toMatchObject({ kind: 'error', label: 'ERROR', failed: true })
+  })
+
+  it('redacts secrets and collapses whitespace in prompts and commands', () => {
+    const token = 'ghp_' + 'Ab1'.repeat(12)
+    const s = run([prompt(`use   ${token}\nplease`, 1), toolUse('t1', 'Bash', { command: `API_TOKEN=abcdef123456 run.sh` }, 2)])
+    expect(JSON.stringify(s.events)).not.toContain(token)
+    expect(JSON.stringify(s.events)).not.toContain('abcdef123456')
+    expect(s.events[0]?.text).toContain('please')
+    expect(s.events[0]?.text).not.toContain('\n')
+  })
+
+  it('truncates very long text', () => {
+    expect(run([prompt('x'.repeat(5000), 1)]).events[0]?.text.length).toBeLessThanOrEqual(400)
+  })
+})
+
+describe('files changed', () => {
+  it('counts +/- lines per edit result and sums across calls', () => {
+    const patch = (lines: string[]) => [{ lines }]
+    const s = run([
+      toolUse('e1', 'Edit', { file_path: 'src/a.ts' }, 1),
+      toolResult('e1', 2, { result: { filePath: 'src/a.ts', structuredPatch: patch([' ctx', '+new1', '+new2', '-old']) } }),
+      toolUse('e2', 'Edit', { file_path: 'src/a.ts' }, 3),
+      toolResult('e2', 4, { result: { filePath: 'src/a.ts', structuredPatch: patch(['+x']) } }),
+      toolUse('w1', 'Write', { file_path: 'src/b.ts' }, 5),
+      toolResult('w1', 6, { result: { type: 'create', filePath: 'src/b.ts', content: 'a\nb\nc' } }),
+    ])
+    expect([...s.files.values()]).toEqual([
+      { path: 'src/a.ts', added: 3, removed: 1 },
+      { path: 'src/b.ts', added: 3, removed: 0, created: true },
+    ])
+    expect(summarize(s)).toMatchObject({ linesAdded: 6, linesRemoved: 1 })
+  })
+
+  it('lists an edited file even before its result arrives', () => {
+    expect(run([toolUse('e1', 'Edit', { file_path: 'src/a.ts' }, 1)]).files.get('src/a.ts')).toEqual({ path: 'src/a.ts', added: 0, removed: 0 })
+  })
+})
+
+describe('tokens, context and cost', () => {
+  const usage = (i: number, o: number, cr: number, cc: number) => ({ input_tokens: i, output_tokens: o, cache_read_input_tokens: cr, cache_creation_input_tokens: cc })
+
+  it('counts usage once per assistant message id even when it spans several lines', () => {
+    const s = run([
+      toolUse('t1', 'Read', { file_path: 'a' }, 1, 'msgA', usage(10, 100, 1000, 0)),
+      toolUse('t2', 'Read', { file_path: 'b' }, 2, 'msgA', usage(10, 100, 1000, 0)), // same message, second block
+      toolUse('t3', 'Read', { file_path: 'c' }, 3, 'msgB', usage(5, 50, 2000, 300)),
+    ])
+    const sum = summarize(s)
+    expect(sum.tokens).toEqual({ input: 15, output: 150, cacheRead: 3000, cacheCreation: 300 })
+    expect(sum.assistantMessages).toBe(2)
+    expect(sum.contextTokens).toBe(5 + 2000 + 300)
+  })
+
+  it('ignores synthetic-model messages and lists real models', () => {
+    const synthetic = { type: 'assistant', timestamp: T(1), message: { id: 's', model: '<synthetic>', content: [], usage: usage(1, 1, 1, 1) } }
+    const s = run([synthetic, toolUse('t1', 'Read', { file_path: 'a' }, 2, 'm', usage(1, 1, 1, 1))])
+    expect(summarize(s)).toMatchObject({ model: 'claude-test', models: ['claude-test'], assistantMessages: 1 })
+  })
+
+  it('uses the last cost-state for cost and line totals', () => {
+    const s = run([
+      { type: 'cost-state', totalCostUSD: 0.1, totalLinesAdded: 1, totalLinesRemoved: 0 },
+      { type: 'cost-state', totalCostUSD: 0.427, totalLinesAdded: 49, totalLinesRemoved: 2 },
+    ])
+    expect(summarize(s)).toMatchObject({ costUSD: 0.427, linesAdded: 49, linesRemoved: 2 })
+  })
+
+  it('leaves cost undefined when there is no cost-state', () => {
+    expect(summarize(run([prompt('x', 1)])).costUSD).toBeUndefined()
+  })
+})
+
+describe('compaction', () => {
+  const boundary = (pre: number, post: number) => ({ type: 'system', subtype: 'compact_boundary', uuid: 'c1', timestamp: T(9), compactMetadata: { trigger: 'auto', preTokens: pre, postTokens: post } })
+
+  it('adds a COMPACTED event and counts it, never storing the summary text', () => {
+    const s = run([boundary(393_336, 8_583), prompt('SUMMARY-TEXT-SHOULD-NOT-APPEAR', 10, { isCompactSummary: true })])
+    expect(s.events).toHaveLength(1)
+    expect(s.events[0]).toMatchObject({ kind: 'system', label: 'COMPACTED', text: 'Context compacted 393k → 9k tokens', note: 'Trigger: auto' })
+    expect(JSON.stringify(s.events)).not.toContain('SUMMARY-TEXT')
+    expect(summarize(s)).toMatchObject({ compactions: 1, prompts: 0 })
+  })
+
+  it('infers a 1M window when observed tokens exceed 200k, otherwise 200k', () => {
+    const withUsage = (cr: number) => toolUse('t', 'Read', { file_path: 'a' }, 1, 'm', { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: cr, cache_creation_input_tokens: 0 })
+    expect(summarize(run([withUsage(50_000)])).contextWindow).toBe(200_000)
+    expect(summarize(run([boundary(393_336, 8_583), withUsage(50_000)])).contextWindow).toBe(1_000_000)
+  })
+})
+
+describe('robustness', () => {
+  it('ignores junk, unknown types and malformed shapes without throwing', () => {
+    const junk: unknown[] = [null, 5, 'str', [], {}, { type: 5 }, { type: 'future-type', x: 1 }, { type: 'user', message: 7 }, { type: 'assistant', message: { content: 'nope', usage: 'x' } }, { type: 'user', message: { content: [null, 3, { type: 'tool_result' }] } }]
+    expect(() => run(junk)).not.toThrow()
+    expect(summarize(run(junk)).prompts).toBe(0)
+  })
+
+  it('still summarises correctly without keeping events', () => {
+    const lines = [prompt('hello', 1), toolUse('t1', 'Edit', { file_path: 'a' }, 2, 'm', { input_tokens: 1, output_tokens: 2, cache_read_input_tokens: 3, cache_creation_input_tokens: 4 })]
+    const s = run(lines, false)
+    expect(s.events).toEqual([])
+    expect(summarize(s)).toMatchObject({ prompts: 1, toolCalls: 1, tokens: { input: 1, output: 2, cacheRead: 3, cacheCreation: 4 } })
+  })
+
+  it('caps stored events and says so', () => {
+    const s = createSessionState('x', { keepEvents: true })
+    for (let i = 0; i < MAX_EVENTS + 5; i++) applyLine(s, prompt(`p${i}`, 1))
+    expect(s.events).toHaveLength(MAX_EVENTS)
+    expect(s.eventsTruncated).toBe(true)
+    expect(summarize(s).prompts).toBe(MAX_EVENTS + 5)
+  })
+})

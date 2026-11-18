@@ -4,6 +4,7 @@ export * from './hooks'
 export * from './mcp'
 export * from './memory'
 export * from './redact'
+export * from './session'
 export * from './settings'
 
 /**
