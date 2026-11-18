@@ -54,7 +54,7 @@ export function SessionPage({ sessionId }: { sessionId: string }) {
     )
   }
 
-  const { session: s, events, files, eventsTruncated } = data
+  const { session: s, events, files, tasks, eventsTruncated } = data
   const shown = events.filter((e) => matches(filter, e))
   const resume = `claude --resume ${s.id}`
   const totalTokens = s.tokens.input + s.tokens.output + s.tokens.cacheRead + s.tokens.cacheCreation
@@ -150,6 +150,20 @@ export function SessionPage({ sessionId }: { sessionId: string }) {
             ))}
             <span className="text-xs text-muted">Counted from edit results in the transcript.</span>
           </section>
+          {tasks.length > 0 && (
+            <section className={card}>
+              <h2 className="m-0 text-base font-bold">Task list</h2>
+              {tasks.map((k) => (
+                <span
+                  key={k.id}
+                  className={`text-sm ${k.status === 'completed' ? 'text-muted line-through' : k.status === 'in_progress' ? 'font-semibold text-text' : 'text-text'}`}
+                >
+                  {k.status === 'in_progress' ? '▶ ' : ''}
+                  {k.text}
+                </span>
+              ))}
+            </section>
+          )}
         </aside>
       </div>
     </div>
