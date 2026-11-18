@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, Outlet } from '@tanstack/react-router'
 import { api } from './api'
+import { CommandPalette } from './CommandPalette'
 import { useLiveFeed } from './live'
 
 const navLink = 'rounded-lg px-3 py-2 text-sm text-muted no-underline hover:text-text'
@@ -10,6 +11,7 @@ export function Layout() {
   useLiveFeed()
   return (
     <div className="min-h-screen">
+      <CommandPalette />
       <header className="flex flex-wrap items-center gap-x-7 gap-y-3 border-b border-border bg-surface-2 px-7 py-3">
         <span className="flex items-center gap-2.5 text-lg font-bold">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent" aria-hidden="true">
