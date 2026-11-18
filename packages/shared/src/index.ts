@@ -27,9 +27,14 @@ export const HangarConfigSchema = z
   .object({
     version: z.literal(1).default(1),
     repos: z.array(RepoSchema).default([]),
+    prefs: z.object({ desktopAlerts: z.boolean().default(false) }).passthrough().default({ desktopAlerts: false }),
   })
   .passthrough()
 export type HangarConfig = z.infer<typeof HangarConfigSchema>
+
+/** User preferences stored in ~/.hangar/config.json. */
+export type Prefs = HangarConfig['prefs']
+export const PrefsPatchSchema = z.object({ desktopAlerts: z.boolean().optional() }).strict()
 
 /** A repo as returned by the API: `exists` is false if the folder has gone missing. */
 export type RepoView = Repo & { exists: boolean }

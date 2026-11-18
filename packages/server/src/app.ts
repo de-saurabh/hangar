@@ -11,6 +11,7 @@ import {
   lastSegment,
   maskSensitiveValues,
   SCOPE_PRECEDENCE,
+  PrefsPatchSchema,
   type HealthResponse,
   type Repo,
   type RepoView,
@@ -18,12 +19,13 @@ import {
   type SessionListItem,
   type SessionSummary,
 } from '@hangar/shared'
-import { addRepo, loadConfig, removeRepo, RepoError } from './config.js'
+import { addRepo, loadConfig, removeRepo, RepoError, saveConfig } from './config.js'
 import { read as readMemory } from './sources/claudeMd.js'
 import { defaultClaudeJsonPath, read as readMcp } from './sources/mcp.js'
 import { claudeHome, read as readSettings } from './sources/settings.js'
 import { SessionIndex } from './sessions.js'
 import { LiveStore } from './live.js'
+import { createAlerter, desktopSender } from './notify.js'
 import { apply as applyHooks, preview as previewHooks, SettingsParseError, StaleTokenError } from './hookInstall.js'
 
 const LOOPBACK_HOST = /^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/i
@@ -59,6 +61,8 @@ export interface AppOptions {
   claudeHome?: string
   /** Start background polling of the live registry. The CLI sets this; tests leave it off. */
   startLive?: boolean
+  /** Override the desktop notification sender (tests). */
+  sendDesktop?: (title: string, message: string) => void
 }
 
 /** Attach the registered repo containing the session's cwd (most specific wins). */
@@ -76,7 +80,16 @@ function withRepo(s: SessionSummary, repos: Repo[]): SessionListItem {
 export function createApp(opts: AppOptions) {
   const sessions = new SessionIndex(opts.claudeHome ?? claudeHome())
   const live = new LiveStore(opts.claudeHome ?? claudeHome())
-  if (opts.startLive) live.start()
+  if (opts.startLive) {
+    live.start()
+    // Desktop alerts: opt-in, works with the browser tab closed.
+    const alert = createAlerter(opts.sendDesktop ?? desktopSender)
+    live.on('transition', (t) => {
+      void loadConfig().then((c) => {
+        if (c.prefs.desktopAlerts) alert(t)
+      })
+    })
+  }
   const app = express()
   app.disable('x-powered-by')
   app.use(loopbackOnly)
@@ -189,6 +202,19 @@ export function createApp(opts: AppOptions) {
       if (e instanceof SettingsParseError) throw new RepoError(e.message, 422)
       throw e
     }
+  })
+
+  app.get('/api/prefs', async (_req, res) => {
+    res.json((await loadConfig()).prefs)
+  })
+
+  app.put('/api/prefs', async (req, res) => {
+    const patch = PrefsPatchSchema.safeParse(req.body)
+    if (!patch.success) throw new RepoError('Body must be { "desktopAlerts"?: boolean }', 400)
+    const config = await loadConfig()
+    config.prefs = { ...config.prefs, ...patch.data }
+    await saveConfig(config)
+    res.json(config.prefs)
   })
 
   app.get('/api/live', async (_req, res) => {

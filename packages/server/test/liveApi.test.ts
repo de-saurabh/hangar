@@ -94,3 +94,16 @@ describe('hook install api', () => {
     delete process.env.HANGAR_HOME
   })
 })
+
+describe('prefs and desktop alerts', () => {
+  it('stores prefs, defaulting desktop alerts off, and validates the body', async () => {
+    process.env.HANGAR_HOME = home
+    expect(await (await fetch(`${base}/api/prefs`)).json()).toMatchObject({ desktopAlerts: false })
+    const put = (body: unknown) => fetch(`${base}/api/prefs`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+    expect(await (await put({ desktopAlerts: true })).json()).toMatchObject({ desktopAlerts: true })
+    expect(await (await fetch(`${base}/api/prefs`)).json()).toMatchObject({ desktopAlerts: true })
+    expect((await put({ desktopAlerts: 'yes' })).status).toBe(400)
+    expect((await put({ other: 1 })).status).toBe(400)
+    delete process.env.HANGAR_HOME
+  })
+})
