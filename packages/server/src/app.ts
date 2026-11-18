@@ -27,6 +27,8 @@ import { claudeHome, read as readSettings } from './sources/settings.js'
 import { SessionIndex, withRepo } from './sessions.js'
 import { buildDashboard } from './dashboard.js'
 import { LiveStore } from './live.js'
+import { ApprovalTracker } from './approvals.js'
+import { AllowlistError, applyAdd, isAllowed, previewAdd, targetPath, type AllowTarget } from './allowlist.js'
 import { recentCommits } from './sources/gitHistory.js'
 import { createAlerter, desktopSender } from './notify.js'
 import { apply as applyHooks, preview as previewHooks, SettingsParseError, StaleTokenError } from './hookInstall.js'
@@ -71,6 +73,7 @@ export interface AppOptions {
 export function createApp(opts: AppOptions) {
   const sessions = new SessionIndex(opts.claudeHome ?? claudeHome())
   const live = new LiveStore(opts.claudeHome ?? claudeHome())
+  const approvals = new ApprovalTracker()
   if (opts.startLive) {
     live.start()
     // Desktop alerts: opt-in, works with the browser tab closed.
@@ -88,7 +91,10 @@ export function createApp(opts: AppOptions) {
   // Always answer 200 {}: Hangar must never make a Claude Code hook fail.
   const hookBody = express.json({ limit: '25mb', strict: false })
   const hookIngest: RequestHandler = (req, res) => {
-    if (typeof req.body === 'object' && req.body !== null) live.ingest(req.body)
+    if (typeof req.body === 'object' && req.body !== null) {
+      live.ingest(req.body)
+      void approvals.ingest(req.body).catch(() => undefined)
+    }
     res.json({})
   }
   // Unparseable body: still 200, so the hook shows no error.
@@ -191,6 +197,56 @@ export function createApp(opts: AppOptions) {
     } catch (e) {
       if (e instanceof StaleTokenError) throw new RepoError(e.message, 409)
       if (e instanceof SettingsParseError) throw new RepoError(e.message, 422)
+      throw e
+    }
+  })
+
+  app.get('/api/insights/allowlist', async (_req, res) => {
+    const home = opts.claudeHome ?? claudeHome()
+    const { repos } = await loadConfig()
+    const all = await approvals.suggestions(repos, () => false)
+    const kept = []
+    for (const s of all) {
+      const sc = s.scope
+      const repo = sc === 'global' ? undefined : repos.find((r) => r.id === sc.repoId)
+      if (!(await isAllowed(home, s.rule, repo))) kept.push(s)
+    }
+    res.set('Cache-Control', 'no-store').json({ suggestions: kept })
+  })
+
+  const resolveAllow = async (rule: unknown, scope: unknown, repoId: unknown): Promise<{ rule: string; path: string }> => {
+    if (typeof rule !== 'string' || (scope !== 'global' && scope !== 'repo')) throw new RepoError('Body must be { "rule": string, "scope": "global" | "repo", "repoId"?: string }', 400)
+    let target: AllowTarget = { scope: 'global' }
+    if (scope === 'repo') {
+      const repo = (await loadConfig()).repos.find((r) => r.id === repoId)
+      if (!repo) throw new RepoError('Repo not found', 404)
+      target = { scope: 'repo', repo }
+    }
+    return { rule, path: targetPath(opts.claudeHome ?? claudeHome(), target) }
+  }
+
+  /** Diff of adding one allow rule. Read-only. */
+  app.post('/api/insights/allowlist/preview', async (req, res) => {
+    const b = (req.body ?? {}) as Record<string, unknown>
+    const { rule, path } = await resolveAllow(b.rule, b.scope, b.repoId)
+    try {
+      res.set('Cache-Control', 'no-store').json(await previewAdd(path, rule))
+    } catch (e) {
+      if (e instanceof AllowlistError) throw new RepoError(e.message, 422)
+      throw e
+    }
+  })
+
+  /** Writes the rule; needs the token of the preview the user saw. Backs the file up first. */
+  app.post('/api/insights/allowlist/apply', async (req, res) => {
+    const b = (req.body ?? {}) as Record<string, unknown>
+    if (typeof b.token !== 'string') throw new RepoError('Body must include the preview token', 400)
+    const { rule, path } = await resolveAllow(b.rule, b.scope, b.repoId)
+    try {
+      res.json(await applyAdd(path, rule, b.token))
+    } catch (e) {
+      if (e instanceof StaleTokenError) throw new RepoError(e.message, 409)
+      if (e instanceof AllowlistError) throw new RepoError(e.message, 422)
       throw e
     }
   })
