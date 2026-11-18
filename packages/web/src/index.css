@@ -1,101 +1,51 @@
 @import 'tailwindcss';
 
-/* Design tokens from CLAUDE.md (dark is the default). Fonts are self-hosted (no network calls). */
+/*
+ * Design tokens. Each colour is declared once as light-dark(light, dark); the
+ * browser picks the side from the element's color-scheme, so there is no second
+ * copy of the palette. Dark is the default look from CLAUDE.md. Fonts are
+ * self-hosted (no network calls).
+ */
 @theme {
-  --color-bg: #0e1014;
-  --color-surface: #161920;
-  --color-surface-2: #12151b;
-  --color-border: #262a33;
-  --color-text: #e7e9ee;
-  --color-muted: #a0a7b4;
-  --color-accent: #8ab4ff;
-  --color-running: #4ade80;
-  --color-waiting: #fbbf24;
-  --color-error: #f87171;
-  --color-done: #c4b5fd;
-  --color-scope-user: #c4b5fd;
-  --color-scope-project: #8ab4ff;
-  --color-scope-local: #fdba74;
-  --color-scope-managed: #5eead4;
+  --color-bg: light-dark(#f3f4f7, #0e1014);
+  --color-surface: light-dark(#ffffff, #1a1e26);
+  --color-surface-2: light-dark(#e9ebf0, #13161c);
+  --color-border: light-dark(#d9dce3, #262a33);
+  --color-text: light-dark(#161a22, #e7e9ee);
+  --color-muted: light-dark(#566070, #a0a7b4);
+  --color-dim: light-dark(#6c7584, #8b93a1);
+  --color-accent: light-dark(#2f63d8, #8ab4ff);
+  --color-running: light-dark(#168a47, #4ade80);
+  --color-waiting: light-dark(#b26a00, #fbbf24);
+  --color-error: light-dark(#c62828, #f87171);
+  --color-done: light-dark(#6d4fd1, #c4b5fd);
+  --color-scope-user: light-dark(#6d28d9, #c4b5fd);
+  --color-scope-project: light-dark(#2559c9, #8ab4ff);
+  --color-scope-local: light-dark(#c2410c, #fdba74);
+  --color-scope-managed: light-dark(#0f766e, #5eead4);
   /* Supporting tones used by banners, hover and selection. */
-  --color-hover: #1e222b;
-  --color-selected: #1e2738;
-  --color-subtle: #1e222b;
-  --color-soft: #c9ced7;
-  --color-track: #4b5260;
-  --color-warn-bg: #2a2210;
-  --color-warn-text: #fde68a;
-  --color-warn-border: #5c4a1a;
-  --color-danger-bg: #2a1313;
-  --color-on-waiting: #1a1406;
-  --color-on-running: #052e16;
+  --color-hover: light-dark(#e8ebf0, #222731);
+  --color-selected: light-dark(#e3ecfd, #1e2738);
+  --color-subtle: light-dark(#e6e9ee, #222731);
+  --color-soft: light-dark(#3a4350, #c9ced7);
+  --color-track: light-dark(#c3c9d3, #4b5260);
+  --color-warn-bg: light-dark(#fff3d6, #2a2310);
+  --color-warn-text: light-dark(#7a4b00, #fde68a);
+  --color-warn-border: light-dark(#e8c97a, #5c4a1a);
+  --color-danger-bg: light-dark(#fdecec, #2a1313);
+  --color-on-waiting: light-dark(#ffffff, #1a1406);
+  --color-on-running: light-dark(#ffffff, #052e16);
   --font-sans: 'Inter Variable', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
 }
 
-/* Light theme: follows the system unless the user picked one (data-theme on <html>). */
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme='dark']) {
-    --color-bg: #f6f7f9;
-    --color-surface: #ffffff;
-    --color-surface-2: #f0f2f5;
-    --color-border: #d9dde4;
-    --color-text: #1b1f27;
-    --color-muted: #5b6472;
-    --color-accent: #2559c9;
-    --color-running: #15803d;
-    --color-waiting: #b45309;
-    --color-error: #b91c1c;
-    --color-done: #6d28d9;
-    --color-scope-user: #6d28d9;
-    --color-scope-project: #2559c9;
-    --color-scope-local: #c2410c;
-    --color-scope-managed: #0f766e;
-    --color-hover: #e8ebf0;
-    --color-selected: #e3ecfd;
-    --color-subtle: #e6e9ee;
-    --color-soft: #3a4350;
-    --color-track: #c3c9d3;
-    --color-warn-bg: #fff7e0;
-    --color-warn-text: #7a4b00;
-    --color-warn-border: #e8c97a;
-    --color-danger-bg: #fdecec;
-    --color-on-waiting: #ffffff;
-    --color-on-running: #ffffff;
-    color-scheme: light;
-  }
+/* Follow the system unless the user picked a theme (data-theme on <html>, see theme.ts). */
+:root {
+  color-scheme: light dark;
 }
-
 :root[data-theme='light'] {
-  --color-bg: #f6f7f9;
-  --color-surface: #ffffff;
-  --color-surface-2: #f0f2f5;
-  --color-border: #d9dde4;
-  --color-text: #1b1f27;
-  --color-muted: #5b6472;
-  --color-accent: #2559c9;
-  --color-running: #15803d;
-  --color-waiting: #b45309;
-  --color-error: #b91c1c;
-  --color-done: #6d28d9;
-  --color-scope-user: #6d28d9;
-  --color-scope-project: #2559c9;
-  --color-scope-local: #c2410c;
-  --color-scope-managed: #0f766e;
-  --color-hover: #e8ebf0;
-  --color-selected: #e3ecfd;
-  --color-subtle: #e6e9ee;
-  --color-soft: #3a4350;
-  --color-track: #c3c9d3;
-  --color-warn-bg: #fff7e0;
-  --color-warn-text: #7a4b00;
-  --color-warn-border: #e8c97a;
-  --color-danger-bg: #fdecec;
-  --color-on-waiting: #ffffff;
-  --color-on-running: #ffffff;
   color-scheme: light;
 }
-
 :root[data-theme='dark'] {
   color-scheme: dark;
 }
@@ -106,4 +56,49 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans);
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/*
+ * Session side panel: a non-modal top-layer panel that slides in from the right.
+ * Open/close are transitions on display + overlay so it also animates out.
+ */
+.side-panel {
+  opacity: 0;
+  transition-property: opacity, translate, display, overlay;
+  transition-duration: 0.2s;
+  transition-timing-function: ease-out;
+  transition-behavior: allow-discrete;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .side-panel {
+    translate: 100% 0;
+  }
+}
+.side-panel:popover-open {
+  opacity: 1;
+  translate: 0 0;
+  @starting-style {
+    opacity: 0;
+    translate: 100% 0;
+  }
+}
+
+/* Native modal dialogs: keep scrolling inside the dialog instead of the page behind it. */
+dialog:modal {
+  overscroll-behavior: contain;
+}
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
 }

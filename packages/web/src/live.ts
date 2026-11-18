@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
-import type { LiveState } from '@hangar/shared'
+import { isInside, type LiveState } from '@hangar/shared'
 import { api } from './api'
 
 export interface Transition {
@@ -75,6 +75,12 @@ export function useLiveFeed(): void {
     return () => es.close()
   }, [qc])
 }
+
+/** Sessions that are still alive (not finished). */
+export const isActive = (s: LiveState) => s.status !== 'finished'
+
+/** True if the live session is running inside the repo's folder. */
+export const inRepo = (s: LiveState, repo: { path: string }) => !!s.cwd && isInside(s.cwd, repo.path)
 
 export function useLive(): Map<string, LiveState> {
   const { data } = useQuery({ queryKey: ['live'], queryFn: api.live, staleTime: Infinity })

@@ -1,36 +1,39 @@
-import { createRootRoute, createRoute, createRouter } from '@tanstack/react-router'
+import { createRootRoute, createRoute, createRouter, Navigate } from '@tanstack/react-router'
+import { useEffect } from 'react'
 import { Layout } from './Layout'
-import { ConfigIndex } from './routes/ConfigIndex'
-import { ConfigPage } from './routes/Config'
-import { Dashboard } from './routes/Dashboard'
-import { LibraryPage } from './routes/Library'
-import { InsightsPage } from './routes/Insights'
-import { SessionPage } from './routes/Session'
-import { SessionsPage } from './routes/Sessions'
+import { ConfigPage } from './routes/config/Config'
+import { Dashboard } from './routes/dashboard/Dashboard'
+import { LibraryPage } from './routes/library/Library'
+import { InsightsPage } from './routes/insights/Insights'
+import { useScope } from './scope'
+import { SessionsPage } from './routes/sessions/Sessions'
 
 const rootRoute = createRootRoute({ component: Layout })
 
 const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: Dashboard })
 
-const configIndexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/config', component: ConfigIndex })
+const configIndexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/config', component: ConfigPage })
 
 const configRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/repos/$repoId/config',
-  component: function ConfigRoute() {
+  component: function ConfigRedirect() {
+    // Old links: pick that repo as the scope, then show the one Config page.
     const { repoId } = configRoute.useParams()
-    return <ConfigPage repoId={repoId} />
+    const [, setScope] = useScope()
+    useEffect(() => setScope(repoId), [repoId, setScope])
+    return <Navigate to="/config" replace />
   },
 })
 
-const sessionsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/sessions', component: SessionsPage })
+const sessionsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/sessions', component: () => <SessionsPage /> })
 
 const sessionRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/sessions/$sessionId',
   component: function SessionRoute() {
     const { sessionId } = sessionRoute.useParams()
-    return <SessionPage sessionId={sessionId} />
+    return <SessionsPage sessionId={sessionId} />
   },
 })
 
