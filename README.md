@@ -15,15 +15,17 @@ Needs Node 20+.
 
 ## What you get
 
+Every page is filtered by the **repo strip** under the header: pick a repo, or "All repos". The layout is fixed and never rearranges with your data.
+
 | Screen | What it does |
 |---|---|
-| **Dashboard** | Live sessions grouped by status, "waiting for you" alerts, tasks across repos, today's cost, CLAUDE.md changes |
-| **Sessions** | Every session with search, a readable timeline, files changed, cost and context use |
+| **Dashboard** | Four lanes (needs you, running, idle, finished today) with one card per session, a side panel for a quick look, plus spend, context filling up, open tasks and CLAUDE.md changes |
+| **Sessions** | Search and review: filters, a readable timeline, files changed, cost and context use. Live sessions are acted on from the Dashboard |
 | **Insights** | Cost and tokens per day, by repo and model, a daily budget, allowlist suggestions, where Claude got stuck, what shipped this week |
-| **Library** | Commands, agents, skills and hooks from all repos; copy to a repo or make global; repo templates; local backup of your `~/.claude` |
-| **Config** | Effective settings with the scope each value comes from, permissions, hooks, MCP servers, CLAUDE.md files with a linter, a secrets check |
+| **Library** | Commands, agents, skills and hooks, each with where it lives; copy to a repo or make global; repo templates; local backup of your `~/.claude` |
+| **Config** | For the selected repo: effective settings with the file each value comes from (Global, Project, Local), permissions, hooks, MCP servers with a Check button, CLAUDE.md files with a linter, a secrets check |
 
-Also: ⌘K / Ctrl+K to jump anywhere, desktop and browser notifications when a session needs you, and a light theme.
+Also: ⌘K / Ctrl+K to jump anywhere, desktop and browser alerts when a session needs you (the bell in the header), and an Auto / Light / Dark theme.
 
 ## Principles
 
@@ -34,7 +36,7 @@ Also: ⌘K / Ctrl+K to jump anywhere, desktop and browser notifications when a s
 
 ## Live status (optional)
 
-Without setup, Hangar infers busy/idle from files. To know the moment a session is **waiting for you** and what it wants to run, enable hooks from the banner on the Sessions page. You get a diff of the exact change to `~/.claude/settings.json` first; the hooks POST small events to `127.0.0.1` and never block Claude if Hangar is closed. You can remove them from the same dialog.
+Without setup, Hangar infers busy/idle from files. To know the moment a session is **waiting for you** and what it wants to run, enable hooks from the bell menu in the header. You get a diff of the exact change to `~/.claude/settings.json` first; the hooks POST small events to `127.0.0.1` and never block Claude if Hangar is closed. You can remove them from the same dialog.
 
 ## Known limits
 
