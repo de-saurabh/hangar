@@ -64,7 +64,7 @@ function pathCandidates(line: string): string[] {
     if (/^[a-z]+:\/\//i.test(t) || t.startsWith('~') || t.startsWith('/') || /^[A-Za-z]:[\\/]/.test(t)) continue // URLs, home, absolute
     if (/[*?<>{}$|()[\]=]/.test(t)) continue // globs, placeholders, expressions, flags
     if (t.startsWith('-') || t.includes('@')) continue
-    if (/^\.{1,2}$/.test(t)) continue
+    if (/^\.{1,2}$/.test(t) || /^\.[\w-]+\/$/.test(t)) continue // ".", ".." and bare dot-dirs like .claude/ are generic references
     const hasDir = t.includes('/')
     if (!(hasDir && (KNOWN_EXT.test(t) || t.endsWith('/'))) && !(!hasDir && KNOWN_EXT.test(t) && /^[\w.-]+$/.test(t) && /\.(?:json|md|ya?ml|toml|lock|env)$/i.test(t))) continue
     // A bare "node.js" / "next.config" style name is a product, not a file: require a real stem.

@@ -13,7 +13,7 @@ describe('stale paths', () => {
 
   it('ignores URLs, globs, flags, absolute paths, placeholders, code fences and product names', () => {
     const text = [
-      '`https://example.com/a.json` `src/**/*.ts` `--config` `~/.claude/CLAUDE.md` `/etc/hosts` `<dir>/x.ts` `node.js` `$HOME/a.md`',
+      '`https://example.com/a.json` `src/**/*.ts` `--config` `~/.claude/CLAUDE.md` `/etc/hosts` `<dir>/x.ts` `node.js` `$HOME/a.md` `.claude/`',
       '```',
       '`src/in-fence.ts`',
       '```',

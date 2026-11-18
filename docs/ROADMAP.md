@@ -40,7 +40,7 @@
 - "Where Claude got stuck" (repeated failures, high context, failing MCP).
 - Weekly summary of what shipped (from session titles + commits).
 
-## M6 — CLAUDE.md linter
+## M6 — CLAUDE.md linter (done)
 - Conflicts between global and project rules, stale file paths, duplicates, size warnings, suggestion to split into nested CLAUDE.md.
 
 ## M7 — Library & templates
@@ -55,3 +55,7 @@
 - Cost per day is an **estimate**: transcripts have no per-day cost, so a session's reported total is spread over its messages by relative token price; running sessions use the same model's observed rate.
 - Allowlist suggestions need hooks enabled (PermissionRequest followed by the same call's PostToolUse = approved by hand). **Unverified with a real session.** Counters live in `~/.hangar/approvals.json` (rule + cwd only). Repo rules are written to `.claude/settings.local.json`, global to `~/.claude/settings.json`, always diff → token → backup.
 - Weekly "shipped" is deterministic (session titles + git subjects), no LLM.
+
+### M6 notes
+- Heuristics only (plain line parsing, fence-aware; no remark): stale backticked paths, broken `@imports`, repeated lines, always/never contradictions, large files/sections. Findings say "may"; read-only (no auto-fix).
+- Conflict detection only matches same-subject "always X" vs "never/don't X"; paraphrases are missed by design.
