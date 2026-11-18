@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+export * from './settings'
+
 /**
  * Hangar's own config (~/.hangar/config.json). Unknown fields are preserved
  * (passthrough) so newer/older versions don't destroy each other's data.
