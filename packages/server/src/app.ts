@@ -29,6 +29,7 @@ import { claudeHome, read as readSettings } from './sources/settings.js'
 import { SessionIndex, withRepo } from './sessions.js'
 import { buildDashboard } from './dashboard.js'
 import { LiveStore } from './live.js'
+import { discoverFiles, discoverHooks, publicItem } from './sources/library.js'
 import { ApprovalTracker } from './approvals.js'
 import { AllowlistError, applyAdd, isAllowed, previewAdd, targetPath, type AllowTarget } from './allowlist.js'
 import { recentCommits } from './sources/gitHistory.js'
@@ -267,6 +268,13 @@ export function createApp(opts: AppOptions) {
       if (e instanceof AllowlistError) throw new RepoError(e.message, 422)
       throw e
     }
+  })
+
+  app.get('/api/library', async (_req, res) => {
+    const home = opts.claudeHome ?? claudeHome()
+    const { repos } = await loadConfig()
+    const [files, hooks] = await Promise.all([discoverFiles(home, repos), discoverHooks(home, repos)])
+    res.set('Cache-Control', 'no-store').json({ items: [...files.map(publicItem), ...hooks] })
   })
 
   app.get('/api/dashboard', async (_req, res) => {

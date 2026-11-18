@@ -27,6 +27,9 @@ export function Layout() {
           <Link to="/insights" className={navLink} activeProps={navActive}>
             Insights
           </Link>
+          <Link to="/library" className={navLink} activeProps={navActive}>
+            Library
+          </Link>
           <Link to="/config" className={navLink} activeProps={navActive}>
             Config
           </Link>

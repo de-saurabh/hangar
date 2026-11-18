@@ -3,6 +3,7 @@ import { Layout } from './Layout'
 import { ConfigIndex } from './routes/ConfigIndex'
 import { ConfigPage } from './routes/Config'
 import { Dashboard } from './routes/Dashboard'
+import { LibraryPage } from './routes/Library'
 import { InsightsPage } from './routes/Insights'
 import { SessionPage } from './routes/Session'
 import { SessionsPage } from './routes/Sessions'
@@ -35,7 +36,9 @@ const sessionRoute = createRoute({
 
 const insightsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/insights', component: InsightsPage })
 
-const routeTree = rootRoute.addChildren([indexRoute, sessionsRoute, sessionRoute, insightsRoute, configIndexRoute, configRoute])
+const libraryRoute = createRoute({ getParentRoute: () => rootRoute, path: '/library', component: LibraryPage })
+
+const routeTree = rootRoute.addChildren([indexRoute, sessionsRoute, sessionRoute, insightsRoute, libraryRoute, configIndexRoute, configRoute])
 
 export const router = createRouter({ routeTree })
 

@@ -75,3 +75,29 @@ describe('discoverHooks', () => {
     expect(JSON.stringify(hooks)).not.toContain('sk-abcdefghijklmnopqrstuvwx')
   })
 })
+
+import type { Server } from 'node:http'
+import type { AddressInfo } from 'node:net'
+import { createApp } from '../src/app.js'
+import { listenSafe } from './helpers.js'
+
+describe('GET /api/library', () => {
+  it('returns items without server-only fields', async () => {
+    const hh = await mkdtemp(join(tmpdir(), 'hangar-lib-h-'))
+    process.env.HANGAR_HOME = hh
+    await w(join(claude, 'commands', 'deploy.md'), 'Ship it')
+    const server: Server = await listenSafe(createApp({ version: 't', claudeHome: claude }))
+    try {
+      const r = await (await fetch(`http://127.0.0.1:${(server.address() as AddressInfo).port}/api/library`)).json()
+      expect(r.items).toHaveLength(1)
+      expect(r.items[0]).toMatchObject({ kind: 'commands', name: 'deploy', scope: 'user' })
+      expect(r.items[0].abs).toBeUndefined()
+      expect(r.items[0].home).toBeUndefined()
+    } finally {
+      server.closeAllConnections()
+      await new Promise((res) => server.close(res))
+      delete process.env.HANGAR_HOME
+      await rm(hh, { recursive: true, force: true })
+    }
+  })
+})
