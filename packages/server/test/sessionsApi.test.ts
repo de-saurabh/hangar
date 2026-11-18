@@ -53,3 +53,22 @@ describe('sessions api', () => {
     expect(await res.json()).toEqual({ error: 'Session not found' })
   })
 })
+
+describe('session search', () => {
+  const find = async (q: string) => (await (await fetch(`${base}/api/sessions?q=${encodeURIComponent(q)}`)).json()) as SessionListItem[]
+
+  it('finds sessions by prompt text, prefix and file path', async () => {
+    expect((await find('redis')).map((s) => s.id)).toEqual([ID])
+    expect((await find('limit')).map((s) => s.id)).toEqual([ID])
+    expect((await find('limiter.ts')).map((s) => s.id)).toEqual([ID])
+  })
+
+  it('returns nothing for a miss and never searches compaction summaries', async () => {
+    expect(await find('zzzunmatched')).toEqual([])
+    expect(await find('FIXTURE-COMPACT-SUMMARY')).toEqual([])
+  })
+
+  it('treats a blank query as the full list', async () => {
+    expect(await find('   ')).toHaveLength(1)
+  })
+})

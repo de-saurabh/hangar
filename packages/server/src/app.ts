@@ -147,10 +147,16 @@ export function createApp(opts: AppOptions) {
     res.json(await readMcp({ claudeJsonPath, repoPath: repo.path }))
   })
 
-  app.get('/api/sessions', async (_req, res) => {
+  app.get('/api/sessions', async (req, res) => {
     await sessions.refresh()
     const { repos } = await loadConfig()
-    res.json(sessions.summaries().map((s) => withRepo(s, repos)))
+    const q = typeof req.query.q === 'string' ? req.query.q.slice(0, 200) : ''
+    let list = sessions.summaries()
+    if (q.trim()) {
+      const rank = new Map(sessions.search(q).map((id, i) => [id, i]))
+      list = list.filter((s) => rank.has(s.id)).sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0))
+    }
+    res.json(list.map((s) => withRepo(s, repos)))
   })
 
   app.get('/api/sessions/:id', async (req, res) => {

@@ -92,6 +92,9 @@ export interface SessionState {
   cost?: { usd?: number; added?: number; removed?: number; startTime?: number }
   toolEvent: Map<string, number>
   seq: number
+  /** Redacted prompt/assistant text for search, bounded by MAX_SEARCH_CHARS. */
+  searchChunks: string[]
+  searchChars: number
 }
 
 interface Usage {
@@ -104,6 +107,7 @@ interface Usage {
 }
 
 export const MAX_EVENTS = 20_000
+export const MAX_SEARCH_CHARS = 40_000
 const TEXT_MAX = 400
 const NOTE_MAX = 200
 
@@ -122,6 +126,8 @@ export function createSessionState(id: string, opts: { keepEvents?: boolean } = 
     usageById: new Map(),
     toolEvent: new Map(),
     seq: 0,
+    searchChunks: [],
+    searchChars: 0,
   }
 }
 
@@ -182,6 +188,12 @@ function pushEvent(s: SessionState, e: Omit<SessionEvent, 'id'> & { id?: string 
   }
   s.events.push({ ...e, id: e.id ?? `${s.id}:${s.seq}` })
   return s.events.length - 1
+}
+
+function addSearch(s: SessionState, text: string): void {
+  if (s.searchChars >= MAX_SEARCH_CHARS || !text) return
+  s.searchChunks.push(text)
+  s.searchChars += text.length
 }
 
 function touch(s: SessionState, ts: string | undefined): void {
@@ -265,6 +277,7 @@ function applyUser(s: SessionState, raw: Obj, ts: string): void {
   if (!text) return
   s.prompts++
   if (s.firstPrompt === undefined) s.firstPrompt = truncate(text, 80)
+  addSearch(s, text)
   pushEvent(s, { id: str(raw.uuid), t: ts, kind: 'prompt', label: 'YOU', text })
 }
 
@@ -294,14 +307,20 @@ function applyAssistant(s: SessionState, raw: Obj, ts: string): void {
     if (!isObj(b)) continue
     if (b.type === 'text') {
       const text = clean(str(b.text) ?? '')
-      if (text) pushEvent(s, { t: ts, kind: 'assistant', label: 'CLAUDE', text })
+      if (text) {
+        addSearch(s, text)
+        pushEvent(s, { t: ts, kind: 'assistant', label: 'CLAUDE', text })
+      }
     } else if (b.type === 'tool_use') {
       const name = str(b.name) ?? 'tool'
       s.toolCalls++
       const input = isObj(b.input) ? b.input : {}
       if (EDIT_TOOLS.has(name)) {
         const p = str(input.file_path) ?? str(input.notebook_path)
-        if (p && !s.files.has(p)) s.files.set(p, { path: p, added: 0, removed: 0 })
+        if (p && !s.files.has(p)) {
+          s.files.set(p, { path: p, added: 0, removed: 0 })
+          addSearch(s, p)
+        }
       }
       const idx = pushEvent(s, {
         id: str(b.id),

@@ -7,6 +7,7 @@ import {
   type SessionState,
   type SessionSummary,
 } from '@hangar/shared'
+import MiniSearch from 'minisearch'
 import { discover, TranscriptTail, type TranscriptFile } from './sources/transcripts.js'
 
 interface Holder {
@@ -54,6 +55,8 @@ export class SessionIndex {
   private details = new Map<string, { tail: TranscriptTail; holder: Holder }>()
   private inflight?: Promise<void>
   private lastRefresh = 0
+  private dirty = true
+  private mini?: MiniSearch<{ id: string; title: string; cwd: string; branch: string; text: string }>
 
   constructor(
     private readonly claudeHome: string,
@@ -74,7 +77,12 @@ export class SessionIndex {
   private async doRefresh(): Promise<void> {
     const files = await discover(this.claudeHome)
     const present = new Set(files.map((f) => f.path))
-    for (const key of this.entries.keys()) if (!present.has(key)) this.entries.delete(key)
+    for (const key of this.entries.keys()) {
+      if (!present.has(key)) {
+        this.entries.delete(key)
+        this.dirty = true
+      }
+    }
 
     for (const file of files) {
       let entry = this.entries.get(file.path)
@@ -86,6 +94,7 @@ export class SessionIndex {
       if (entry.seen.size === file.size && entry.seen.mtimeMs === file.mtimeMs) continue
       try {
         await entry.tail.advance()
+        this.dirty = true
         entry.seen = { size: file.size, mtimeMs: file.mtimeMs }
         entry.file = file
       } catch {
@@ -100,6 +109,32 @@ export class SessionIndex {
       .map((e) => summarize(e.holder.state))
       .filter((s) => s.lastEventAt !== undefined)
       .sort((a, b) => (b.lastEventAt ?? '').localeCompare(a.lastEventAt ?? ''))
+  }
+
+  /** Ranked ids of sessions matching the query (prefix + light fuzzy). Empty query matches nothing. */
+  search(query: string): string[] {
+    if (!query.trim()) return []
+    if (this.dirty || !this.mini) {
+      const mini = new MiniSearch<{ id: string; title: string; cwd: string; branch: string; text: string }>({
+        fields: ['title', 'cwd', 'branch', 'text'],
+        storeFields: [],
+        idField: 'id',
+      })
+      const docs = [...this.entries.values()].map((e) => {
+        const st = e.holder.state
+        const sum = summarize(st)
+        return { id: e.file.path, title: sum.title, cwd: sum.cwd ?? '', branch: sum.gitBranch ?? '', text: st.searchChunks.join(' ') }
+      })
+      mini.addAll(docs)
+      this.mini = mini
+      this.dirty = false
+    }
+    const ids = new Map<string, number>()
+    for (const r of this.mini.search(query, { prefix: true, fuzzy: 0.15, boost: { title: 3, branch: 2 }, combineWith: 'AND' })) {
+      const entry = this.entries.get(r.id as string)
+      if (entry) ids.set(entry.file.sessionId, Math.max(ids.get(entry.file.sessionId) ?? 0, r.score))
+    }
+    return [...ids.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => id)
   }
 
   /** Full timeline for one session; the newest file wins if an id appears twice. */
