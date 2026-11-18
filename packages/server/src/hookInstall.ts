@@ -1,10 +1,7 @@
-import { createHash } from 'node:crypto'
-import { copyFile, mkdir, readFile, rename, writeFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
-import { createTwoFilesPatch } from 'diff'
+import { join } from 'node:path'
 import { applyEdits, modify, parse, type ParseError } from 'jsonc-parser'
 import { HOOK_EVENTS, type InstallPreview } from '@hangar/shared'
-import { hangarHome } from './config.js'
+import { applyEdit, previewEdit, readText, StaleTokenError } from './settingsWrite.js'
 
 /** Marks hook handlers Hangar owns; port-independent so a port change is just a reinstall. */
 const OURS = /^http:\/\/127\.0\.0\.1:\d+\/api\/hook\?src=hangar$/
@@ -80,65 +77,22 @@ export function computeUninstall(text: string): string {
   return out
 }
 
-const sha = (s: string) => createHash('sha256').update(s).digest('hex')
-
-
-async function readText(path: string): Promise<string | undefined> {
-  try {
-    return await readFile(path, 'utf8')
-  } catch (e) {
-    if ((e as NodeJS.ErrnoException).code === 'ENOENT') return undefined
-    throw e
-  }
-}
+const compute = (action: 'install' | 'uninstall', url: string) => (text: string) =>
+  action === 'install' ? computeInstall(text, url) : computeUninstall(text)
 
 export async function preview(claudeHome: string, port: number): Promise<InstallPreview> {
   const settingsPath = join(claudeHome, 'settings.json')
-  const current = await readText(settingsPath)
-  const text = current ?? ''
-  const installed = isInstalled(text)
+  const current = (await readText(settingsPath)) ?? ''
+  const installed = isInstalled(current)
   const url = hookUrl(port)
   const action = installed ? 'uninstall' : 'install'
-  const after = installed ? computeUninstall(text) : computeInstall(text, url)
-  return {
-    settingsPath,
-    exists: current !== undefined,
-    installed,
-    url,
-    events: HOOK_EVENTS,
-    action,
-    diff: after === text ? '' : createTwoFilesPatch('settings.json (current)', 'settings.json (proposed)', text, after, '', '', { context: 3 }),
-    token: sha(text),
-  }
+  const p = await previewEdit(settingsPath, compute(action, url))
+  return { settingsPath, exists: p.exists, installed, url, events: HOOK_EVENTS, action, diff: p.diff, token: p.token }
 }
 
-export class StaleTokenError extends Error {}
+export { StaleTokenError }
 
-/**
- * Apply install/uninstall. Refuses (StaleTokenError) if the file changed since
- * the preview the user saw. Always backs up an existing file first, then
- * writes atomically.
- */
-export async function apply(claudeHome: string, port: number, action: 'install' | 'uninstall', token: string): Promise<{ backupPath?: string }> {
-  const settingsPath = join(claudeHome, 'settings.json')
-  const current = await readText(settingsPath)
-  const text = current ?? ''
-  if (sha(text) !== token) throw new StaleTokenError('settings.json changed since the preview. Review the new diff and try again.')
-
-  const next = action === 'install' ? computeInstall(text, hookUrl(port)) : computeUninstall(text)
-  if (next === text) return {}
-
-  let backupPath: string | undefined
-  if (current !== undefined) {
-    const dir = join(hangarHome(), 'backups')
-    await mkdir(dir, { recursive: true })
-    backupPath = join(dir, `settings.json.${new Date().toISOString().replace(/[:.]/g, '-')}.bak`)
-    await copyFile(settingsPath, backupPath)
-  } else {
-    await mkdir(dirname(settingsPath), { recursive: true })
-  }
-  const tmp = `${settingsPath}.hangar-tmp`
-  await writeFile(tmp, next, 'utf8')
-  await rename(tmp, settingsPath)
-  return backupPath ? { backupPath } : {}
+/** Apply install/uninstall through the shared safe-write path (token check, backup, atomic rename). */
+export function apply(claudeHome: string, port: number, action: 'install' | 'uninstall', token: string): Promise<{ backupPath?: string }> {
+  return applyEdit(join(claudeHome, 'settings.json'), compute(action, hookUrl(port)), token)
 }
