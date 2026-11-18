@@ -1,4 +1,4 @@
-import type { ApiError, EffectiveSettings, HealthResponse, McpResult, MemoryFile, Repo, RepoView } from '@hangar/shared'
+import type { ApiError, EffectiveSettings, HealthResponse, McpResult, MemoryFile, Repo, RepoView, SessionDetail, SessionListItem } from '@hangar/shared'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
@@ -21,5 +21,7 @@ export const api = {
   mcp: (repoId: string) => request<McpResult>(`/api/repos/${repoId}/mcp`),
   revealSetting: (repoId: string, key: string, scope: string) =>
     request<{ value: unknown }>(`/api/repos/${repoId}/settings/value?${new URLSearchParams({ key, scope })}`),
+  sessions: () => request<SessionListItem[]>('/api/sessions'),
+  session: (id: string) => request<SessionDetail>(`/api/sessions/${encodeURIComponent(id)}`),
   removeRepo: (id: string) => request<void>(`/api/repos/${id}`, { method: 'DELETE' }),
 }

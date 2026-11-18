@@ -19,6 +19,9 @@ export function Layout() {
           <Link to="/" className={navLink} activeProps={navActive} activeOptions={{ exact: true }}>
             Dashboard
           </Link>
+          <Link to="/sessions" className={navLink} activeProps={navActive}>
+            Sessions
+          </Link>
           <Link to="/config" className={navLink} activeProps={navActive}>
             Config
           </Link>

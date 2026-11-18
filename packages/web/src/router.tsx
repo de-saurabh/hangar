@@ -3,6 +3,8 @@ import { Layout } from './Layout'
 import { ConfigIndex } from './routes/ConfigIndex'
 import { ConfigPage } from './routes/Config'
 import { Dashboard } from './routes/Dashboard'
+import { SessionPage } from './routes/Session'
+import { SessionsPage } from './routes/Sessions'
 
 const rootRoute = createRootRoute({ component: Layout })
 
@@ -19,7 +21,18 @@ const configRoute = createRoute({
   },
 })
 
-const routeTree = rootRoute.addChildren([indexRoute, configIndexRoute, configRoute])
+const sessionsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/sessions', component: SessionsPage })
+
+const sessionRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/sessions/$sessionId',
+  component: function SessionRoute() {
+    const { sessionId } = sessionRoute.useParams()
+    return <SessionPage sessionId={sessionId} />
+  },
+})
+
+const routeTree = rootRoute.addChildren([indexRoute, sessionsRoute, sessionRoute, configIndexRoute, configRoute])
 
 export const router = createRouter({ routeTree })
 
