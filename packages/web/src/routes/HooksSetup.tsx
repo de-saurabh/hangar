@@ -23,8 +23,8 @@ export function HooksSetup() {
           </button>
         </p>
       ) : (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-waiting/50 bg-[#2a2210] px-4 py-3">
-          <p className="m-0 max-w-2xl text-sm text-[#fde68a]">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-waiting/50 bg-warn-bg px-4 py-3">
+          <p className="m-0 max-w-2xl text-sm text-warn-text">
             Hangar can only see busy/idle right now. Enable hooks to know the moment a session is <b>waiting for you</b> and what it wants to run.
           </p>
           <button type="button" onClick={() => setOpen(true)} className="min-h-10 cursor-pointer rounded-lg border-0 bg-accent px-3.5 text-sm font-bold text-bg">

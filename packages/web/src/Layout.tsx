@@ -1,11 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { Link, Outlet } from '@tanstack/react-router'
 import { api } from './api'
 import { CommandPalette } from './CommandPalette'
 import { useLiveFeed } from './live'
+import { getTheme, NEXT, setTheme } from './theme'
 
 const navLink = 'rounded-lg px-3 py-2 text-sm text-muted no-underline hover:text-text'
-const navActive = { className: 'rounded-lg bg-[#1e222b] px-3 py-2 text-sm font-semibold text-text no-underline' }
+const navActive = { className: 'rounded-lg bg-hover px-3 py-2 text-sm font-semibold text-text no-underline' }
 
 export function Layout() {
   useLiveFeed()
@@ -37,11 +39,32 @@ export function Layout() {
           </Link>
         </nav>
         <HealthBadge />
+        <ThemeToggle />
       </header>
       <main className="mx-auto max-w-6xl px-7 pb-12 pt-6">
         <Outlet />
       </main>
     </div>
+  )
+}
+
+function ThemeToggle() {
+  const [choice, setChoice] = useState(getTheme)
+  const label = { system: 'Auto', light: 'Light', dark: 'Dark' }[choice]
+  return (
+    <button
+      type="button"
+      aria-label={`Theme: ${label}. Click to change.`}
+      title="Theme"
+      onClick={() => {
+        const next = NEXT[choice]
+        setTheme(next)
+        setChoice(next)
+      }}
+      className="min-h-8 cursor-pointer rounded-lg border border-border bg-transparent px-2.5 text-xs font-semibold text-muted"
+    >
+      {label}
+    </button>
   )
 }
 

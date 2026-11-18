@@ -55,7 +55,7 @@ export function ConfigPage({ repoId }: { repoId: string }) {
               aria-selected={tab === t.id}
               onClick={() => setTab(t.id)}
               className={`min-h-10 rounded-lg border px-3.5 text-sm font-semibold ${
-                tab === t.id ? 'border-accent bg-[#1e2738] text-text' : 'border-border text-muted hover:text-text'
+                tab === t.id ? 'border-accent bg-selected text-text' : 'border-border text-muted hover:text-text'
               }`}
             >
               {t.label}
@@ -138,7 +138,7 @@ function SettingsRows({ settings, tab, repoId }: { settings: EffectiveSettings; 
     return (
       <>
         {settings.values.map((v) => (
-          <div key={v.key} className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 border-b border-[#1e222b] py-2.5">
+          <div key={v.key} className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 border-b border-subtle py-2.5">
             <span className="basis-[220px] font-mono text-[13px]">{v.key}</span>
             <ValueCell
               repoId={repoId}
@@ -172,7 +172,7 @@ function SettingsRows({ settings, tab, repoId }: { settings: EffectiveSettings; 
   return (
     <>
       {rows.map((r) => (
-        <div key={r.key} className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 border-b border-[#1e222b] py-2.5">
+        <div key={r.key} className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 border-b border-subtle py-2.5">
           <span className="basis-[220px] font-mono text-[13px]">{r.key}</span>
           <ValueCell
             repoId={repoId}

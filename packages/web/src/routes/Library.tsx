@@ -33,7 +33,7 @@ export function LibraryPage() {
               role="tab"
               aria-selected={kind === k}
               onClick={() => setKind(k)}
-              className={`min-h-9 cursor-pointer rounded-lg border px-3 text-sm font-semibold ${kind === k ? 'border-accent bg-[#1E2738] text-text' : 'border-border bg-transparent text-muted'}`}
+              className={`min-h-9 cursor-pointer rounded-lg border px-3 text-sm font-semibold ${kind === k ? 'border-accent bg-selected text-text' : 'border-border bg-transparent text-muted'}`}
             >
               {LABEL[k]} · {count(k)}
             </button>
@@ -76,7 +76,7 @@ function ItemCard({ item }: { item: LibraryItem }) {
   return (
     <div className={card}>
       <span className="break-all font-mono text-[15px] font-semibold">{item.kind === 'commands' ? `/${item.name}` : item.name}</span>
-      {item.description && <span className="line-clamp-3 text-sm leading-snug text-[#C9CED7]">{item.description}</span>}
+      {item.description && <span className="line-clamp-3 text-sm leading-snug text-soft">{item.description}</span>}
       <span className="text-xs text-muted">
         {item.scope === 'user' ? 'Global (~/.claude)' : `In ${item.repoName}`} · {item.path}
         {item.detail ? ` · ${item.detail}` : ''}
@@ -105,7 +105,7 @@ function ItemCard({ item }: { item: LibraryItem }) {
               ))}
             </select>
           ) : (
-            <button type="button" disabled={targets.length === 0} onClick={() => setPicking(true)} className="min-h-9 cursor-pointer rounded-lg border border-border bg-[#1E222B] px-3 text-[13px] font-semibold text-text disabled:opacity-50">
+            <button type="button" disabled={targets.length === 0} onClick={() => setPicking(true)} className="min-h-9 cursor-pointer rounded-lg border border-border bg-hover px-3 text-[13px] font-semibold text-text disabled:opacity-50">
               Copy to repo…
             </button>
           )}

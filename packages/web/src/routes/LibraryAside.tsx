@@ -5,7 +5,7 @@ import { timeAgo } from '../time'
 import { FilesDialog } from './FilesDialog'
 
 const card = 'flex flex-col gap-2.5 rounded-[14px] border border-border bg-surface p-4'
-const btn = 'min-h-10 cursor-pointer rounded-lg border border-border bg-[#1E222B] px-3 text-sm font-semibold text-text disabled:opacity-50'
+const btn = 'min-h-10 cursor-pointer rounded-lg border border-border bg-hover px-3 text-sm font-semibold text-text disabled:opacity-50'
 
 export function LibraryAside() {
   return (
@@ -29,7 +29,7 @@ function Templates() {
       <h2 className="m-0 text-base font-bold">Repo templates</h2>
       <span className="text-[13px] text-muted">A ready-made .claude/ folder and CLAUDE.md for a project. Existing files are never overwritten.</span>
       {data?.templates.map((t) => (
-        <label key={t.id} className={`flex cursor-pointer flex-col gap-0.5 rounded-[10px] border px-3 py-2.5 ${templateId === t.id ? 'border-accent bg-[#1E2738]' : 'border-transparent bg-surface-2'}`}>
+        <label key={t.id} className={`flex cursor-pointer flex-col gap-0.5 rounded-[10px] border px-3 py-2.5 ${templateId === t.id ? 'border-accent bg-selected' : 'border-transparent bg-surface-2'}`}>
           <span className="flex items-center gap-2 text-sm font-semibold">
             <input type="radio" name="template" checked={templateId === t.id} onChange={() => setTemplateId(t.id)} />
             {t.name}

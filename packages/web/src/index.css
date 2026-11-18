@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 
-/* Design tokens from CLAUDE.md. Fonts are self-hosted (no network calls). */
+/* Design tokens from CLAUDE.md (dark is the default). Fonts are self-hosted (no network calls). */
 @theme {
   --color-bg: #0e1014;
   --color-surface: #161920;
@@ -17,8 +17,87 @@
   --color-scope-project: #8ab4ff;
   --color-scope-local: #fdba74;
   --color-scope-managed: #5eead4;
+  /* Supporting tones used by banners, hover and selection. */
+  --color-hover: #1e222b;
+  --color-selected: #1e2738;
+  --color-subtle: #1e222b;
+  --color-soft: #c9ced7;
+  --color-track: #4b5260;
+  --color-warn-bg: #2a2210;
+  --color-warn-text: #fde68a;
+  --color-warn-border: #5c4a1a;
+  --color-danger-bg: #2a1313;
+  --color-on-waiting: #1a1406;
+  --color-on-running: #052e16;
   --font-sans: 'Inter Variable', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+}
+
+/* Light theme: follows the system unless the user picked one (data-theme on <html>). */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --color-bg: #f6f7f9;
+    --color-surface: #ffffff;
+    --color-surface-2: #f0f2f5;
+    --color-border: #d9dde4;
+    --color-text: #1b1f27;
+    --color-muted: #5b6472;
+    --color-accent: #2559c9;
+    --color-running: #15803d;
+    --color-waiting: #b45309;
+    --color-error: #b91c1c;
+    --color-done: #6d28d9;
+    --color-scope-user: #6d28d9;
+    --color-scope-project: #2559c9;
+    --color-scope-local: #c2410c;
+    --color-scope-managed: #0f766e;
+    --color-hover: #e8ebf0;
+    --color-selected: #e3ecfd;
+    --color-subtle: #e6e9ee;
+    --color-soft: #3a4350;
+    --color-track: #c3c9d3;
+    --color-warn-bg: #fff7e0;
+    --color-warn-text: #7a4b00;
+    --color-warn-border: #e8c97a;
+    --color-danger-bg: #fdecec;
+    --color-on-waiting: #ffffff;
+    --color-on-running: #ffffff;
+    color-scheme: light;
+  }
+}
+
+:root[data-theme='light'] {
+  --color-bg: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-surface-2: #f0f2f5;
+  --color-border: #d9dde4;
+  --color-text: #1b1f27;
+  --color-muted: #5b6472;
+  --color-accent: #2559c9;
+  --color-running: #15803d;
+  --color-waiting: #b45309;
+  --color-error: #b91c1c;
+  --color-done: #6d28d9;
+  --color-scope-user: #6d28d9;
+  --color-scope-project: #2559c9;
+  --color-scope-local: #c2410c;
+  --color-scope-managed: #0f766e;
+  --color-hover: #e8ebf0;
+  --color-selected: #e3ecfd;
+  --color-subtle: #e6e9ee;
+  --color-soft: #3a4350;
+  --color-track: #c3c9d3;
+  --color-warn-bg: #fff7e0;
+  --color-warn-text: #7a4b00;
+  --color-warn-border: #e8c97a;
+  --color-danger-bg: #fdecec;
+  --color-on-waiting: #ffffff;
+  --color-on-running: #ffffff;
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
 }
 
 html,

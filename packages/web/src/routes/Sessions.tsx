@@ -10,7 +10,7 @@ import { timeAgo } from '../time'
 import { HooksSetup } from './HooksSetup'
 
 const chip = 'min-h-10 rounded-full border px-3.5 text-[13px] font-semibold cursor-pointer'
-const chipOn = `${chip} border-accent bg-[#1e2738] text-text`
+const chipOn = `${chip} border-accent bg-selected text-text`
 const chipOff = `${chip} border-border bg-transparent text-muted hover:text-text`
 
 export function SessionsPage() {
@@ -130,7 +130,7 @@ function Toggle({ on, onClick, label }: { on: boolean; onClick: () => void; labe
       aria-pressed={on}
       className="inline-flex min-h-11 cursor-pointer items-center gap-2.5 rounded-[10px] border border-border bg-surface px-3.5 text-sm font-semibold text-text"
     >
-      <span className={`relative h-5 w-9 rounded-full ${on ? 'bg-accent' : 'bg-[#4b5260]'}`}>
+      <span className={`relative h-5 w-9 rounded-full ${on ? 'bg-accent' : 'bg-track'}`}>
         <span className={`absolute top-0.5 size-4 rounded-full bg-bg ${on ? 'left-[18px]' : 'left-0.5'}`} />
       </span>
       {label}
@@ -191,14 +191,14 @@ function SessionCard({ s, live }: { s: SessionListItem; live: LiveState | undefi
     <Link
       to="/sessions/$sessionId"
       params={{ sessionId: s.id }}
-      className={`flex flex-col gap-2 rounded-[10px] border p-3.5 text-text no-underline hover:border-accent ${waiting ? 'border-waiting bg-[#2a2210]' : 'border-border bg-surface'}`}
+      className={`flex flex-col gap-2 rounded-[10px] border p-3.5 text-text no-underline hover:border-accent ${waiting ? 'border-waiting bg-warn-bg' : 'border-border bg-surface'}`}
     >
       <span className="flex justify-between gap-2 text-xs text-muted">
-        <span className="font-semibold text-[#c9ced7]">{s.repoName}</span>
+        <span className="font-semibold text-soft">{s.repoName}</span>
         {s.gitBranch && <span className="truncate font-mono">{s.gitBranch}</span>}
       </span>
       <span className="text-[15px] font-semibold leading-snug">{s.title}</span>
-      {now && <span className={`break-words font-mono text-xs leading-snug ${waiting ? 'text-[#fde68a]' : 'text-muted'}`}>{waiting ? 'Wants: ' : ''}{now}</span>}
+      {now && <span className={`break-words font-mono text-xs leading-snug ${waiting ? 'text-warn-text' : 'text-muted'}`}>{waiting ? 'Wants: ' : ''}{now}</span>}
       <ContextBar s={s} />
       <span className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
         <span>{shortModel(s.model)}</span>

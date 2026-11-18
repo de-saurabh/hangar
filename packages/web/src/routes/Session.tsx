@@ -111,7 +111,7 @@ export function SessionPage({ sessionId }: { sessionId: string }) {
                   role="tab"
                   aria-selected={filter === id}
                   onClick={() => setFilter(id)}
-                  className={`min-h-9 cursor-pointer rounded-lg border px-3 text-[13px] font-semibold ${filter === id ? 'border-accent bg-[#1e2738] text-text' : 'border-border bg-transparent text-muted hover:text-text'}`}
+                  className={`min-h-9 cursor-pointer rounded-lg border px-3 text-[13px] font-semibold ${filter === id ? 'border-accent bg-selected text-text' : 'border-border bg-transparent text-muted hover:text-text'}`}
                 >
                   {label}
                 </button>
@@ -177,7 +177,7 @@ function EventRow({ e, start }: { e: SessionEvent; start: string | undefined }) 
     <div className="flex gap-3">
       <span className="w-[52px] flex-none pt-[3px] font-mono text-xs text-muted">{offsetLabel(start, e.t)}</span>
       <span className={`mt-[5px] size-2.5 flex-none rounded-full ${failed ? 'bg-error' : DOT[e.kind]}`} />
-      <div className="flex min-w-0 flex-1 flex-col gap-1 border-b border-[#1e222b] pb-2.5">
+      <div className="flex min-w-0 flex-1 flex-col gap-1 border-b border-subtle pb-2.5">
         <span className="text-xs font-bold tracking-[0.04em] text-muted">
           {e.label}
           {failed ? ' · FAILED' : ''}

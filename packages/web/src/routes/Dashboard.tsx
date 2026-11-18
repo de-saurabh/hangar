@@ -10,8 +10,8 @@ import { ContextBar } from './Sessions'
 const card = 'flex flex-col gap-2.5 rounded-[14px] border border-border bg-surface p-4'
 const pill = 'whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold'
 const PILL: Record<string, string> = {
-  waiting: `${pill} bg-waiting text-[#1a1406]`,
-  running: `${pill} bg-running text-[#052e16]`,
+  waiting: `${pill} bg-waiting text-on-waiting`,
+  running: `${pill} bg-running text-on-running`,
   idle: `${pill} bg-border text-text`,
 }
 const LABEL: Record<string, string> = { waiting: 'Waiting for you', running: 'Running', idle: 'Idle' }
@@ -48,14 +48,14 @@ function Alerts({ data }: { data: DashboardData }) {
   return (
     <>
       {data.alerts.map((a) => (
-        <div key={a.sessionId} role="alert" className="flex flex-wrap items-center gap-x-4 gap-y-2.5 rounded-xl border border-waiting bg-[#2a2210] px-4 py-3.5">
+        <div key={a.sessionId} role="alert" className="flex flex-wrap items-center gap-x-4 gap-y-2.5 rounded-xl border border-waiting bg-warn-bg px-4 py-3.5">
           <span className="size-2.5 rounded-full bg-waiting" />
           <span className="flex-[1_1_360px] text-sm leading-normal">
-            <strong className="text-[#fde68a]">{a.repoName} is waiting for you.</strong>
+            <strong className="text-warn-text">{a.repoName} is waiting for you.</strong>
             {a.detail && (
               <>
                 {' '}
-                It wants to run <code className="font-mono text-[13px] text-[#fde68a]">{a.detail}</code>
+                It wants to run <code className="font-mono text-[13px] text-warn-text">{a.detail}</code>
               </>
             )}{' '}
             · waiting {timeAgo(new Date(a.since).toISOString()).replace(' ago', '')}
@@ -63,11 +63,11 @@ function Alerts({ data }: { data: DashboardData }) {
           <Link
             to="/sessions/$sessionId"
             params={{ sessionId: a.sessionId }}
-            className="inline-flex min-h-10 items-center rounded-lg bg-waiting px-3.5 text-sm font-bold text-[#1a1406] no-underline"
+            className="inline-flex min-h-10 items-center rounded-lg bg-waiting px-3.5 text-sm font-bold text-on-waiting no-underline"
           >
             Open session
           </Link>
-          <CopyButton text={`claude --resume ${a.sessionId}`} label="Copy resume command" className="min-h-10 rounded-lg border border-[#5c4a1a] bg-transparent px-3.5 text-sm font-semibold text-[#fde68a]" />
+          <CopyButton text={`claude --resume ${a.sessionId}`} label="Copy resume command" className="min-h-10 rounded-lg border border-warn-border bg-transparent px-3.5 text-sm font-semibold text-warn-text" />
         </div>
       ))}
     </>
@@ -231,7 +231,7 @@ function Repos({ data }: { data: DashboardData }) {
               {r.branch && <span className="truncate font-mono text-xs text-muted">{r.branch}</span>}
             </div>
             <span className="break-all font-mono text-xs text-muted">{r.path}</span>
-            <span className="text-[13px] text-[#c9ced7]">
+            <span className="text-[13px] text-soft">
               {r.sessionsThisWeek} session{r.sessionsThisWeek === 1 ? '' : 's'} this week · {r.openTasks} open task{r.openTasks === 1 ? '' : 's'}
             </span>
             {!r.exists && <span className="text-xs text-waiting">Folder not found</span>}

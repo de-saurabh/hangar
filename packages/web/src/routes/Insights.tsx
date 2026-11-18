@@ -58,7 +58,7 @@ function UsageSection({ data, metric }: { data: UsageInsightsResponse; metric: '
         </span>
       </div>
       {data.budget.over && (
-        <p role="alert" className="m-0 rounded-lg border border-error/60 bg-[#2a1313] px-3 py-2 text-sm text-error">
+        <p role="alert" className="m-0 rounded-lg border border-error/60 bg-danger-bg px-3 py-2 text-sm text-error">
           Today is at {formatCost(data.budget.todayCost)}, over your {formatCost(budget ?? 0)}/day budget.
         </p>
       )}

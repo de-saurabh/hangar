@@ -93,7 +93,7 @@ function Palette({ onClose }: { onClose: () => void }) {
             ref={(el) => {
               if (i === active) el?.scrollIntoView({ block: 'nearest' })
             }}
-            className={`flex cursor-pointer items-baseline justify-between gap-3 rounded-lg px-3 py-2 text-sm ${i === active ? 'bg-[#1e2738]' : ''}`}
+            className={`flex cursor-pointer items-baseline justify-between gap-3 rounded-lg px-3 py-2 text-sm ${i === active ? 'bg-selected' : ''}`}
           >
             <span className="min-w-0 truncate">{it.label}</span>
             <span className="shrink-0 text-xs text-muted">{it.hint ? `${it.group} · ${it.hint}` : it.group}</span>
