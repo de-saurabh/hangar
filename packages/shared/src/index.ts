@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+export * from './approvals'
 export * from './dashboard'
 export * from './hooks'
 export * from './insights'
