@@ -38,7 +38,26 @@ export async function setNotify(on: boolean): Promise<boolean> {
   return false
 }
 
+const ALERT_COOLDOWN_MS = 30_000
 const folder = (p?: string) => p?.split(/[\\/]/).filter(Boolean).pop() ?? 'A session'
+
+/**
+ * Browser notification for a session that just started waiting. One alert per
+ * session per 30 s, so a burst of prompts is not a burst of toasts. `alerted`
+ * is the caller's memory of when each session was last announced.
+ */
+export function raiseAlert(t: Transition, alerted: Map<string, number>, now: number = Date.now()): boolean {
+  if (t.to !== 'waiting' || !notifyEnabled()) return false
+  const last = alerted.get(t.sessionId)
+  if (last !== undefined && now - last < ALERT_COOLDOWN_MS) return false
+  alerted.set(t.sessionId, now)
+  try {
+    new Notification(`${folder(t.cwd)} needs you`, { body: t.detail ?? 'Waiting for your input', tag: t.sessionId })
+  } catch {
+    // some browsers only allow notifications from a service worker
+  }
+  return true
+}
 
 /**
  * One EventSource for the whole app: keeps the ['live'] query fresh, refreshes
@@ -59,18 +78,7 @@ export function useLiveFeed(): void {
       const t = JSON.parse((e as MessageEvent<string>).data) as Transition
       void qc.invalidateQueries({ queryKey: ['sessions'] })
       void qc.invalidateQueries({ queryKey: ['dashboard'] })
-      if (t.to === 'waiting' && notifyEnabled()) {
-        // One alert per session per 30 s, so a burst of prompts is not a burst of toasts.
-        const last = alerted.current.get(t.sessionId) ?? 0
-        if (Date.now() - last > 30_000) {
-          alerted.current.set(t.sessionId, Date.now())
-          try {
-            new Notification(`${folder(t.cwd)} needs you`, { body: t.detail ?? 'Waiting for your input', tag: t.sessionId })
-          } catch {
-            // some browsers only allow notifications from a service worker
-          }
-        }
-      }
+      raiseAlert(t, alerted.current)
     })
     return () => es.close()
   }, [qc])
