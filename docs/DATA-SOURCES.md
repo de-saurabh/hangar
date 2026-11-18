@@ -95,3 +95,15 @@ Before indexing transcripts for search, redact common secret patterns (API keys,
 - [ ] Find where task lists live.
 - [ ] Inspect a skill folder and a plugin's contributed commands/agents.
 - [ ] Confirm managed-settings path and full precedence from the docs.
+
+
+## Hooks and live status (M3)
+
+- ✅ (docs) `http` hook handler: `{ "type": "http", "url": "...", "timeout": <s> }`; the hook input JSON is POSTed as the body. Non-2xx, connection failure or timeout is a **non-blocking** error unless `onFailure: "block"`. So a stopped Hangar never stalls Claude.
+- ✅ (docs) Common payload fields: `session_id`, `transcript_path`, `cwd`, `permission_mode`, `hook_event_name`; `tool_name`/`tool_input` on tool events; Notification has `notification_type` (`permission_prompt`, `idle_prompt`, `elicitation_dialog`, `auth_success`, ...).
+- ✅ (docs) Matcher omitted, `""` or `"*"` matches everything. Hangar installs one catch-all group per event: `SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, PermissionRequest, Notification, PreCompact, Stop, SessionEnd`.
+- ✅ Registry `sessions/<pid>.json` also holds `startedAt`, `procStart`, `kind`, `entrypoint`, `messagingSocketPath`, `nameSource`, `updatedAt`, `statusUpdatedAt`. Hangar reads only `pid, sessionId, status, cwd, name`.
+- ❓ **Not yet verified with a real session:** the exact payload of `PermissionRequest` vs `Notification` (which fires first, whether both do), that `PreToolUse` follows approval, and what `status` the registry shows while waiting. The reducer treats either as "waiting". Capture real payloads once hooks are enabled and adjust.
+- ❓ Hook events fire for subagents too (`agent_id` present); Hangar currently folds them into the parent session's status.
+- Privacy: payloads can contain file contents and commands. Hangar keeps only event name, tool name and a redacted, 140-char description of the call; prompt text and tool output are never stored or logged.
+- Performance: PreToolUse/PostToolUse mean a local POST per tool call (a few ms). Timeout is 5 s.

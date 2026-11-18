@@ -18,6 +18,9 @@
 - **Not yet:** search, task list panel (storage not located), cost estimate for live sessions (no `cost-state` until the run ends), subagent transcripts.
 
 ## M3 — Live & global board (the headline feature)
+**Status:** built and tested against fixtures and fake hook events; **not yet exercised by a real Claude Code session** (see DATA-SOURCES "Open checks").
+- Done: status reducer, registry adapter, `POST /api/hook`, SSE (`/api/events`), hook installer with diff + backup + token check + uninstall, board UI, desktop (toasted-notifier) and browser alerts, `/api/prefs`.
+- Not done: sound, per-repo alert rules, installing hooks per repo (global only), auto-detecting a port change after install.
 - Install global hooks (consent + diff + backup) → `/hook` endpoint → SSE.
 - Status model: Waiting for you / Running / Idle / Finished.
 - **All sessions board** across every repo, filter by repo.
