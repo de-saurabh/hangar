@@ -24,6 +24,7 @@ import { defaultClaudeJsonPath, read as readMcp } from './sources/mcp.js'
 import { claudeHome, read as readSettings } from './sources/settings.js'
 import { SessionIndex } from './sessions.js'
 import { LiveStore } from './live.js'
+import { apply as applyHooks, preview as previewHooks, SettingsParseError, StaleTokenError } from './hookInstall.js'
 
 const LOOPBACK_HOST = /^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/i
 
@@ -162,6 +163,32 @@ export function createApp(opts: AppOptions) {
     if (!repo) throw new RepoError('Repo not found', 404)
     const claudeJsonPath = opts.claudeHome ? join(opts.claudeHome, '.claude.json') : defaultClaudeJsonPath()
     res.json(await readMcp({ claudeJsonPath, repoPath: repo.path }))
+  })
+
+  /** Preview of installing (or removing) Hangar's hooks. Read-only. */
+  app.get('/api/hooks/install', async (req, res) => {
+    const port = req.socket.localPort ?? 0
+    try {
+      res.set('Cache-Control', 'no-store').json(await previewHooks(opts.claudeHome ?? claudeHome(), port))
+    } catch (e) {
+      if (e instanceof SettingsParseError) throw new RepoError(e.message, 422)
+      throw e
+    }
+  })
+
+  /** The only write Hangar makes to ~/.claude: needs the token of the preview the user saw. */
+  app.post('/api/hooks/install', async (req, res) => {
+    const body = req.body as { action?: unknown; token?: unknown } | undefined
+    if ((body?.action !== 'install' && body?.action !== 'uninstall') || typeof body.token !== 'string') {
+      throw new RepoError('Body must be { "action": "install" | "uninstall", "token": string }', 400)
+    }
+    try {
+      res.json(await applyHooks(opts.claudeHome ?? claudeHome(), req.socket.localPort ?? 0, body.action, body.token))
+    } catch (e) {
+      if (e instanceof StaleTokenError) throw new RepoError(e.message, 409)
+      if (e instanceof SettingsParseError) throw new RepoError(e.message, 422)
+      throw e
+    }
   })
 
   app.get('/api/live', async (_req, res) => {

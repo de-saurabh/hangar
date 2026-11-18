@@ -72,3 +72,25 @@ describe('events stream', () => {
     expect(buf).toContain('"status":"running"')
   })
 })
+
+describe('hook install api', () => {
+  const get = async () => (await (await fetch(`${base}/api/hooks/install`)).json()) as { action: string; token: string; diff: string; installed: boolean }
+  const send = (body: unknown) => fetch(`${base}/api/hooks/install`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+
+  it('previews, applies with the token, then offers uninstall', async () => {
+    process.env.HANGAR_HOME = home
+    const p = await get()
+    expect(p).toMatchObject({ action: 'install', installed: false })
+    expect(p.diff).toContain('/api/hook?src=hangar')
+    expect((await send({ action: 'install', token: p.token })).status).toBe(200)
+    expect(await get()).toMatchObject({ action: 'uninstall', installed: true })
+    delete process.env.HANGAR_HOME
+  })
+
+  it('rejects a bad body (400) and a stale token (409)', async () => {
+    process.env.HANGAR_HOME = home
+    expect((await send({ action: 'nuke', token: 'x' })).status).toBe(400)
+    expect((await send({ action: 'install', token: 'stale' })).status).toBe(409)
+    delete process.env.HANGAR_HOME
+  })
+})

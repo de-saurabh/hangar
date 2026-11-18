@@ -58,7 +58,7 @@ export function repoIdFor(absPath: string): string {
 export class RepoError extends Error {
   constructor(
     message: string,
-    readonly status: 400 | 404 | 409,
+    readonly status: 400 | 404 | 409 | 422,
   ) {
     super(message)
   }
