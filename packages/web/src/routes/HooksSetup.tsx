@@ -100,7 +100,7 @@ function ConfirmDialog({ onClose }: { onClose: () => void }) {
   )
 }
 
-function DiffView({ diff }: { diff: string }) {
+export function DiffView({ diff }: { diff: string }) {
   // Drop the file header lines; colour added/removed lines.
   const lines = diff.split('\n').filter((l) => !l.startsWith('===') && !l.startsWith('---') && !l.startsWith('+++'))
   return (

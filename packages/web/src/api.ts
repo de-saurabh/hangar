@@ -1,4 +1,4 @@
-import type { ApiError, Dashboard, Prefs, InstallPreview, LiveState, EffectiveSettings, HealthResponse, McpResult, MemoryFile, Repo, RepoView, SessionDetail, SessionListItem } from '@hangar/shared'
+import type { InsightsSummary, Suggestion, UsageInsightsResponse, ApiError, Dashboard, Prefs, InstallPreview, LiveState, EffectiveSettings, HealthResponse, McpResult, MemoryFile, Repo, RepoView, SessionDetail, SessionListItem } from '@hangar/shared'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
@@ -10,6 +10,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(body?.error ?? `Request failed (${res.status})`)
   }
   return res.status === 204 ? (undefined as T) : ((await res.json()) as T)
+}
+
+export interface AllowBody {
+  rule: string
+  scope: 'global' | 'repo'
+  repoId?: string
 }
 
 export const api = {
@@ -30,5 +36,10 @@ export const api = {
   hooksPreview: () => request<InstallPreview>('/api/hooks/install'),
   hooksApply: (action: 'install' | 'uninstall', token: string) =>
     request<{ backupPath?: string }>('/api/hooks/install', { method: 'POST', body: JSON.stringify({ action, token }) }),
+  usage: (days = 14) => request<UsageInsightsResponse>(`/api/insights/usage?days=${days}`),
+  insightsSummary: () => request<InsightsSummary>('/api/insights/summary'),
+  allowlist: () => request<{ suggestions: Suggestion[] }>('/api/insights/allowlist'),
+  allowPreview: (b: AllowBody) => request<{ path: string; diff: string; token: string }>('/api/insights/allowlist/preview', { method: 'POST', body: JSON.stringify(b) }),
+  allowApply: (b: AllowBody & { token: string }) => request<{ backupPath?: string }>('/api/insights/allowlist/apply', { method: 'POST', body: JSON.stringify(b) }),
   removeRepo: (id: string) => request<void>(`/api/repos/${id}`, { method: 'DELETE' }),
 }
