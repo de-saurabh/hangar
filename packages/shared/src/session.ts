@@ -119,6 +119,7 @@ export interface SessionState {
 interface Usage {
   /** Timestamp of the line, to tell this run apart from replayed history. */
   t: string
+  model: string
   input: number
   output: number
   cacheRead: number
@@ -367,6 +368,7 @@ function applyAssistant(s: SessionState, raw: Obj, ts: string): void {
   if (u && real) {
     const usage: Usage = {
       t: ts,
+      model: model ?? 'unknown',
       input: num(u.input_tokens),
       output: num(u.output_tokens),
       cacheRead: num(u.cache_read_input_tokens),
@@ -463,6 +465,22 @@ export function applyLine(s: SessionState, raw: unknown): void {
   if (type === 'user') applyUser(s, raw, when)
   else if (type === 'assistant') applyAssistant(s, raw, when)
   else applySystem(s, raw, when)
+}
+
+/** One assistant message's usage, for per-day / per-model accounting. */
+export interface UsageRecord {
+  t: string
+  model: string
+  input: number
+  output: number
+  cacheRead: number
+  cacheCreation: number
+}
+
+/** Usage records of the current run (same replay filter as summarize), oldest first. */
+export function usageRecords(s: SessionState): UsageRecord[] {
+  const runStart = s.cost?.startTime !== undefined ? new Date(s.cost.startTime).toISOString() : undefined
+  return [...s.usageById.values()].filter((u) => !(runStart && u.t && u.t < runStart)).sort((a, b) => a.t.localeCompare(b.t))
 }
 
 export function summarize(s: SessionState): SessionSummary {

@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 export * from './dashboard'
 export * from './hooks'
+export * from './insights'
 export * from './liveStatus'
 export * from './mcp'
 export * from './memory'
