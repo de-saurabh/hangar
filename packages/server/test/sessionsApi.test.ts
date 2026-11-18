@@ -6,6 +6,7 @@ import { join, resolve } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { SessionDetail, SessionListItem } from '@hangar/shared'
 import { createApp } from '../src/app.js'
+import { listenSafe } from './helpers.js'
 
 const FIXTURE_HOME = resolve(__dirname, '../../../test/fixtures/claude-home')
 const ID = '00000000-0000-4000-8000-000000000001'
@@ -17,8 +18,7 @@ let base: string
 beforeEach(async () => {
   hangarHome = await mkdtemp(join(tmpdir(), 'hangar-home-'))
   process.env.HANGAR_HOME = hangarHome
-  server = createApp({ version: 'test', claudeHome: FIXTURE_HOME }).listen(0, '127.0.0.1')
-  await new Promise((r) => server.once('listening', r))
+  server = await listenSafe(createApp({ version: 'test', claudeHome: FIXTURE_HOME }))
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
 })
 

@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createApp } from '../src/app.js'
+import { listenSafe } from './helpers.js'
 import { read } from '../src/sources/mcp.js'
 
 const FIXTURES = resolve(import.meta.dirname, '../../../test/fixtures')
@@ -77,8 +78,7 @@ describe('GET /api/repos/:id/mcp', () => {
   beforeEach(async () => {
     home = await mkdtemp(join(tmpdir(), 'hangar-home-'))
     process.env.HANGAR_HOME = home
-    server = createApp({ version: 'test', claudeHome: join(FIXTURES, 'claude-home') }).listen(0, '127.0.0.1')
-    await new Promise((r) => server.once('listening', r))
+    server = await listenSafe(createApp({ version: 'test', claudeHome: join(FIXTURES, 'claude-home') }))
     base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
   })
   afterEach(async () => {

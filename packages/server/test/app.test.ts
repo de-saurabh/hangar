@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createApp } from '../src/app.js'
+import { listenSafe } from './helpers.js'
 import { configPath } from '../src/config.js'
 
 let home: string
@@ -16,8 +17,7 @@ beforeEach(async () => {
   home = await mkdtemp(join(tmpdir(), 'hangar-home-'))
   repoDir = await mkdtemp(join(tmpdir(), 'hangar-repo-'))
   process.env.HANGAR_HOME = home
-  server = createApp({ version: 'test' }).listen(0, '127.0.0.1')
-  await new Promise((r) => server.once('listening', r))
+  server = await listenSafe(createApp({ version: 'test' }))
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
 })
 

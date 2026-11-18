@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { LiveState } from '@hangar/shared'
 import { createApp } from '../src/app.js'
+import { listenSafe } from './helpers.js'
 
 let home: string
 let server: Server
@@ -13,8 +14,7 @@ let base: string
 
 beforeEach(async () => {
   home = await mkdtemp(join(tmpdir(), 'hangar-liveapi-'))
-  server = createApp({ version: 'test', claudeHome: home }).listen(0, '127.0.0.1')
-  await new Promise((r) => server.once('listening', r))
+  server = await listenSafe(createApp({ version: 'test', claudeHome: home }))
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
 })
 afterEach(async () => {
