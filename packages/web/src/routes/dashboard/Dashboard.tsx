@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useCallback, useState } from 'react'
 import { api } from '../../api'
-import { buildBoard, LANES } from '../../board'
+import { buildBoard, LANES, withLiveOnly } from '../../board'
 import { Button } from '../../components/Button'
 import { PageHeader } from '../../components/PageHeader'
 import { SessionCard } from '../../components/SessionCard'
@@ -30,9 +30,10 @@ export function Dashboard() {
 
   const scopeName = repos.find((r) => r.id === scope)?.name
   const inScope = <T extends { repoName: string }>(x: T) => !scopeName || x.repoName === scopeName
-  const board = buildBoard(sessions.data, live, scope, showOther)
+  const all = withLiveOnly(sessions.data, live, repos)
+  const board = buildBoard(all, live, scope, showOther)
   const alive = [...board.lanes.waiting, ...board.lanes.running, ...board.lanes.idle]
-  const selected = sessions.data.find((s) => s.id === selectedId)
+  const selected = all.find((s) => s.id === selectedId)
 
   const subtitle = scopeName
     ? `${scopeName}: ${board.lanes.waiting.length} need you, ${board.lanes.running.length} running.`

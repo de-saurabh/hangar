@@ -1,4 +1,4 @@
-import type { LiveState, SessionListItem } from '@hangar/shared'
+import { isInside, lastSegment, type LiveState, type SessionListItem } from '@hangar/shared'
 
 export type BoardColumn = 'waiting' | 'running' | 'idle' | 'finished' | 'earlier'
 
@@ -34,6 +34,38 @@ export function groupByColumn<T extends Pick<SessionListItem, 'id' | 'lastEventA
   // Waiting: longest-waiting first, since those are the ones blocked on you.
   out.waiting.sort((a, b) => (live.get(a.id)?.since ?? 0) - (live.get(b.id)?.since ?? 0))
   return out
+}
+
+/**
+ * Live sessions that have no transcript yet (they are known only through
+ * hooks, e.g. just started) get a minimal card, so a session waiting for you
+ * is never missing from the board while the header badge counts it.
+ */
+export function withLiveOnly(sessions: SessionListItem[], live: Map<string, LiveState>, repos: { id: string; name: string; path: string }[]): SessionListItem[] {
+  const known = new Set(sessions.map((s) => s.id))
+  const extra: SessionListItem[] = []
+  for (const l of live.values()) {
+    if (known.has(l.sessionId) || l.status === 'finished') continue
+    const repo = l.cwd ? repos.find((r) => isInside(l.cwd!, r.path)) : undefined
+    extra.push({
+      id: l.sessionId,
+      ...(l.cwd ? { cwd: l.cwd } : {}),
+      title: 'New session',
+      titleSource: 'none',
+      models: [],
+      lastEventAt: new Date(l.lastEventAt).toISOString(),
+      prompts: 0,
+      assistantMessages: 0,
+      toolCalls: 0,
+      tokens: { input: 0, output: 0, cacheRead: 0, cacheCreation: 0 },
+      compactions: 0,
+      tasks: { open: 0, inProgress: 0, done: 0 },
+      failures: [],
+      ...(repo ? { repoId: repo.id } : {}),
+      repoName: repo?.name ?? (l.cwd ? lastSegment(l.cwd) : 'Unknown folder'),
+    })
+  }
+  return [...sessions, ...extra]
 }
 
 export interface Board<T> {
