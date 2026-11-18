@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import type { DashboardMemoryChange, SessionListItem, TaskItemView } from '@hangar/shared'
 import { api } from '../../api'
+import { DayBars } from '../../components/Charts'
 import { RepoAvatar } from '../../components/RepoAvatar'
 import { EmptyLine, Section } from '../../components/Section'
 import { contextPct, formatCost, formatTokens } from '../../format'
@@ -15,28 +16,23 @@ const CONTEXT_WARN_PCT = 60
 /** The last 7 days of spend as bars, against the daily budget when one is set. */
 export function SpendSection() {
   const { data } = useQuery({ queryKey: ['usage', 7], queryFn: () => api.usage(7) })
-  const budget = data?.budget.dailyBudgetUSD ?? null
   const days = data?.days ?? []
-  const top = Math.max(budget ?? 0, ...days.map((d) => d.cost), 0.01)
   return (
     <Section title="Spend" action={<Link to="/insights" className={linkClass}>Insights</Link>}>
       {data ? (
         <>
           <p className="m-0 text-[26px] font-bold tabular-nums">{formatCost(data.budget.todayCost)}</p>
           <p className="m-0 text-[13px] text-muted">
-            {budget ? `of ${formatCost(budget)} daily budget · ` : 'today · '}
+            {data.budget.dailyBudgetUSD ? `of ${formatCost(data.budget.dailyBudgetUSD)} daily budget · ` : 'today · '}
             {formatTokens(days.at(-1)?.newTokens ?? 0)} tokens · estimate
           </p>
-          <div role="img" aria-label={`Spend per day, last 7 days. Today ${formatCost(data.budget.todayCost)}.`} className="relative mt-3 flex h-[70px] items-end gap-1.5">
-            {budget && <span className="absolute inset-x-0 border-t border-dashed border-waiting" style={{ bottom: `${(budget / top) * 100}%` }} />}
-            {days.map((d, i) => (
-              <span
-                key={d.date}
-                title={`${d.date}: ${formatCost(d.cost)}`}
-                className={`flex-1 rounded-t-[3px] ${i === days.length - 1 ? 'bg-accent' : 'bg-track'}`}
-                style={{ height: `${Math.max((d.cost / top) * 100, 3)}%` }}
-              />
-            ))}
+          <div className="mt-3">
+            <DayBars
+              bars={days.map((d) => ({ key: d.date, value: d.cost, title: `${d.date}: ${formatCost(d.cost)}` }))}
+              height={70}
+              limit={data.budget.dailyBudgetUSD}
+              ariaLabel={`Spend per day, last 7 days. Today ${formatCost(data.budget.todayCost)}.`}
+            />
           </div>
           <div className="mt-1 flex justify-between text-xs text-dim">
             <span>{days.length} days ago</span>

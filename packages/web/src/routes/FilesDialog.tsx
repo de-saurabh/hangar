@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import type { FilesPreviewView } from '@hangar/shared'
-import { DiffView } from './HooksSetup'
+import { DiffView } from '../components/DiffView'
 
 const STATUS: Record<string, string> = { new: 'New file', changed: 'Overwrites', same: 'No change' }
 

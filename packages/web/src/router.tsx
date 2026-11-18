@@ -4,7 +4,7 @@ import { ConfigIndex } from './routes/ConfigIndex'
 import { ConfigPage } from './routes/Config'
 import { Dashboard } from './routes/dashboard/Dashboard'
 import { LibraryPage } from './routes/Library'
-import { InsightsPage } from './routes/Insights'
+import { InsightsPage } from './routes/insights/Insights'
 import { SessionsPage } from './routes/sessions/Sessions'
 
 const rootRoute = createRootRoute({ component: Layout })
