@@ -10,6 +10,7 @@ import {
 } from '@hangar/shared'
 import { api } from '../api'
 import { SCOPE_CHIP, SCOPE_LABEL } from '../scopes'
+import { ClaudeMdPanel } from './ClaudeMdPanel'
 
 type Tab = 'effective' | SettingScope
 const TABS: { id: Tab; label: string }[] = [
@@ -60,13 +61,18 @@ export function ConfigPage({ repoId }: { repoId: string }) {
         </div>
       </div>
 
-      {settings.isPending && <p className="text-sm text-muted">Loading…</p>}
-      {settings.error && (
-        <p role="alert" className="text-sm text-error">
-          Couldn't load settings: {settings.error.message}
-        </p>
-      )}
-      {settings.data && <ConfigBody settings={settings.data} tab={tab} />}
+      <div className="flex flex-wrap items-start gap-5">
+        <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-5">
+          {settings.isPending && <p className="text-sm text-muted">Loading…</p>}
+          {settings.error && (
+            <p role="alert" className="text-sm text-error">
+              Couldn't load settings: {settings.error.message}
+            </p>
+          )}
+          {settings.data && <ConfigBody settings={settings.data} tab={tab} />}
+        </div>
+        <ClaudeMdPanel repoId={repoId} />
+      </div>
     </div>
   )
 }
