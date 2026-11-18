@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import type { LiveState, SessionListItem } from '@hangar/shared'
@@ -122,7 +122,38 @@ function Grid({ children }: { children: React.ReactNode }) {
   return <div className="grid items-start gap-4 [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))]">{children}</div>
 }
 
+function Toggle({ on, onClick, label }: { on: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={on}
+      className="inline-flex min-h-11 cursor-pointer items-center gap-2.5 rounded-[10px] border border-border bg-surface px-3.5 text-sm font-semibold text-text"
+    >
+      <span className={`relative h-5 w-9 rounded-full ${on ? 'bg-accent' : 'bg-[#4b5260]'}`}>
+        <span className={`absolute top-0.5 size-4 rounded-full bg-bg ${on ? 'left-[18px]' : 'left-0.5'}`} />
+      </span>
+      {label}
+    </button>
+  )
+}
+
 function NotifyToggle() {
+  const qc = useQueryClient()
+  const { data: prefs } = useQuery({ queryKey: ['prefs'], queryFn: api.prefs })
+  const setDesktop = useMutation({
+    mutationFn: (on: boolean) => api.setPrefs({ desktopAlerts: on }),
+    onSuccess: (p) => qc.setQueryData(['prefs'], p),
+  })
+  return (
+    <div className="flex flex-col items-end gap-2">
+      <Toggle on={prefs?.desktopAlerts ?? false} onClick={() => setDesktop.mutate(!prefs?.desktopAlerts)} label="Desktop alert when a session needs me" />
+      <BrowserToggle />
+    </div>
+  )
+}
+
+function BrowserToggle() {
   const [on, setOn] = useState(notifyEnabled)
   const [blocked, setBlocked] = useState(false)
   const toggle = async () => {
@@ -132,17 +163,7 @@ function NotifyToggle() {
   }
   return (
     <div className="flex flex-col items-end gap-1">
-      <button
-        type="button"
-        onClick={toggle}
-        aria-pressed={on}
-        className="inline-flex min-h-11 cursor-pointer items-center gap-2.5 rounded-[10px] border border-border bg-surface px-3.5 text-sm font-semibold text-text"
-      >
-        <span className={`relative h-5 w-9 rounded-full ${on ? 'bg-accent' : 'bg-[#4b5260]'}`}>
-          <span className={`absolute top-0.5 size-4 rounded-full bg-bg ${on ? 'left-[18px]' : 'left-0.5'}`} />
-        </span>
-        Alert me when a session needs me
-      </button>
+      <Toggle on={on} onClick={toggle} label="Browser alert while this tab is open" />
       {blocked && <span className="text-xs text-waiting">The browser blocked notifications. Allow them for this site, then try again.</span>}
     </div>
   )

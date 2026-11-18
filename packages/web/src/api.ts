@@ -1,4 +1,4 @@
-import type { ApiError, InstallPreview, LiveState, EffectiveSettings, HealthResponse, McpResult, MemoryFile, Repo, RepoView, SessionDetail, SessionListItem } from '@hangar/shared'
+import type { ApiError, Prefs, InstallPreview, LiveState, EffectiveSettings, HealthResponse, McpResult, MemoryFile, Repo, RepoView, SessionDetail, SessionListItem } from '@hangar/shared'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
@@ -23,6 +23,8 @@ export const api = {
     request<{ value: unknown }>(`/api/repos/${repoId}/settings/value?${new URLSearchParams({ key, scope })}`),
   sessions: (q = '') => request<SessionListItem[]>(q.trim() ? `/api/sessions?${new URLSearchParams({ q })}` : '/api/sessions'),
   session: (id: string) => request<SessionDetail>(`/api/sessions/${encodeURIComponent(id)}`),
+  prefs: () => request<Prefs>('/api/prefs'),
+  setPrefs: (patch: Partial<Prefs>) => request<Prefs>('/api/prefs', { method: 'PUT', body: JSON.stringify(patch) }),
   live: () => request<LiveState[]>('/api/live'),
   hooksPreview: () => request<InstallPreview>('/api/hooks/install'),
   hooksApply: (action: 'install' | 'uninstall', token: string) =>
