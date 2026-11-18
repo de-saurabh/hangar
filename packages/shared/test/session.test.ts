@@ -29,6 +29,12 @@ describe('titles and prompts', () => {
     expect(summarize(run([]))).toMatchObject({ title: 'Untitled session', titleSource: 'none' })
   })
 
+  it('shows a slash command as typed, not as its markup', () => {
+    const cmd = '<command-message>plugin</command-message>\n<command-name>/plugin</command-name>\n<command-args>install x</command-args>'
+    expect(summarize(run([prompt(cmd, 1)])).title).toBe('/plugin install x')
+    expect(summarize(run([prompt('<command-name>/clear</command-name>', 1)])).title).toBe('/clear')
+  })
+
   it('records prompts as YOU events and skips meta and tool-result-only user lines', () => {
     const s = run([prompt('hello', 1), prompt('meta stuff', 2, { isMeta: true }), toolResult('t1', 3)])
     expect(s.events.map((e) => [e.kind, e.label, e.text])).toEqual([['prompt', 'YOU', 'hello']])

@@ -168,6 +168,14 @@ const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !
 const str = (v: unknown): string | undefined => (typeof v === 'string' && v !== '' ? v : undefined)
 const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0)
 
+/** Slash commands are stored as XML-ish markup; show what the user typed: "/plugin install x". */
+function readableCommand(text: string): string {
+  const name = /<command-name>\s*([^<]*?)\s*<\/command-name>/.exec(text)?.[1]
+  if (!name) return text
+  const args = /<command-args>([^<]*)<\/command-args>/.exec(text)?.[1]?.trim()
+  return args ? `${name} ${args}` : name
+}
+
 function clean(text: string, max = TEXT_MAX): string {
   return truncate(redactText(text.replace(/\s+/g, ' ').trim()), max)
 }
@@ -374,7 +382,7 @@ function applyUser(s: SessionState, raw: Obj, ts: string): void {
   const content = isObj(raw.message) ? raw.message.content : undefined
   const isToolResultOnly = Array.isArray(content) && content.length > 0 && content.every((b) => isObj(b) && b.type === 'tool_result')
   if (isToolResultOnly) return
-  const text = clean(textOf(content))
+  const text = clean(readableCommand(textOf(content)))
   if (!text) return
   s.prompts++
   if (s.firstPrompt === undefined) s.firstPrompt = truncate(text, 80)
