@@ -48,7 +48,7 @@
 - Repo templates (a `.claude/` folder + CLAUDE.md) applied with a diff preview.
 - Backup `~/.claude` (minus sessions/secrets) to a private git repo with history.
 
-## M8 — Polish
+## M8 — Polish (done, except GIF)
 - MCP health checks, secrets scan view, keyboard shortcuts (⌘K search), light theme, README with GIF.
 
 ### M5 notes
@@ -65,3 +65,7 @@
 - Copy / make global: diff per file → token → backup of anything overwritten. Skills copy as a folder (text files only, max 50 files). Hooks are listed, not copyable (copying one means editing settings.json).
 - Templates are built in (Node service, Learning project); existing files are never overwritten. Deliberately no hook in them: the hook input format for file edits is unverified.
 - Backup is a **local** git repo (`~/.hangar/claude-backup`), written only on "Back up now". settings.json is stored with `env` values and token-like strings masked, so it is for history, not restore. Nothing is pushed anywhere.
+
+### M8 notes
+- ⌘K palette (pages, repo configs, sessions), light/dark/auto theme (all colours are tokens), secrets check (file/line/kind only), MCP health check (click only; HTTP = one header-only GET with no credentials, stdio = PATH lookup, never started).
+- README has a placeholder for the GIF; it still needs recording from a real run.
