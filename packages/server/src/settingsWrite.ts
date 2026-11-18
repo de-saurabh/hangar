@@ -66,3 +66,68 @@ export async function applyEdit(path: string, compute: (text: string) => string,
   await rename(tmp, path)
   return backupPath ? { backupPath } : {}
 }
+
+/** One file in a multi-file write. `compute` maps the current text (undefined if missing) to the new text. */
+export interface FileEdit {
+  path: string
+  compute: (current: string | undefined) => string
+}
+
+export interface FilePreview {
+  path: string
+  status: 'new' | 'changed' | 'same'
+  diff: string
+}
+
+export interface FilesPreview {
+  files: FilePreview[]
+  /** Hash of every file's current state; send it back to confirm you saw this diff. */
+  token: string
+}
+
+const ABSENT = '\0absent'
+
+async function snapshot(edits: FileEdit[]) {
+  const states = await Promise.all(edits.map(async (e) => ({ e, current: await readText(e.path) })))
+  const token = sha(states.map((s) => `${s.e.path}\0${s.current === undefined ? ABSENT : sha(s.current)}`).join('\n'))
+  return { states, token }
+}
+
+export async function previewFiles(edits: FileEdit[]): Promise<FilesPreview> {
+  const { states, token } = await snapshot(edits)
+  const files = states.map(({ e, current }): FilePreview => {
+    const next = e.compute(current)
+    const text = current ?? ''
+    const name = basename(e.path)
+    if (current !== undefined && next === current) return { path: e.path, status: 'same', diff: '' }
+    return { path: e.path, status: current === undefined ? 'new' : 'changed', diff: createTwoFilesPatch(`${name} (current)`, `${name} (proposed)`, text, next, '', '', { context: 3 }) }
+  })
+  return { files, token }
+}
+
+/** Writes every changed file. Refuses if anything changed since the preview; backs up files it overwrites. */
+export async function applyFiles(edits: FileEdit[], token: string): Promise<{ written: number; backupPaths: string[] }> {
+  const { states, token: now } = await snapshot(edits)
+  if (now !== token) throw new StaleTokenError('Files changed since the preview. Review the new diff and try again.')
+
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-')
+  const backupPaths: string[] = []
+  let written = 0
+  for (const { e, current } of states) {
+    const next = e.compute(current)
+    if (current !== undefined && next === current) continue
+    if (current !== undefined) {
+      const dir = join(hangarHome(), 'backups', stamp)
+      await mkdir(dir, { recursive: true })
+      const b = join(dir, `${sha(e.path).slice(0, 8)}-${basename(e.path)}`)
+      await copyFile(e.path, b)
+      backupPaths.push(b)
+    }
+    await mkdir(dirname(e.path), { recursive: true })
+    const tmp = `${e.path}.hangar-tmp`
+    await writeFile(tmp, next, 'utf8')
+    await rename(tmp, e.path)
+    written++
+  }
+  return { written, backupPaths }
+}
