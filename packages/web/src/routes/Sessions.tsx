@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { SessionListItem } from '@hangar/shared'
 import { api } from '../api'
 import { formatCost, formatDuration, shortModel } from '../format'
@@ -12,7 +12,18 @@ const chipOff = `${chip} border-border bg-transparent text-muted hover:text-text
 
 export function SessionsPage() {
   // Polling until live updates (SSE) arrive in M3.
-  const { data, isPending, isError, error } = useQuery({ queryKey: ['sessions'], queryFn: api.sessions, refetchInterval: 5000 })
+  const [search, setSearch] = useState('')
+  const [q, setQ] = useState('')
+  useEffect(() => {
+    const t = setTimeout(() => setQ(search.trim()), 250)
+    return () => clearTimeout(t)
+  }, [search])
+  const { data, isPending, isError, error } = useQuery({
+    queryKey: ['sessions', q],
+    queryFn: () => api.sessions(q),
+    refetchInterval: 5000,
+    placeholderData: (prev) => prev,
+  })
   const [repo, setRepo] = useState<string>('all')
 
   if (isPending) return <p className="text-sm text-muted">Loading sessions…</p>
@@ -26,12 +37,20 @@ export function SessionsPage() {
       <div className="flex flex-col gap-1">
         <h1 className="m-0 text-[28px] font-bold">All sessions</h1>
         <span className="text-sm text-muted">
-          Every Claude Code session on this machine, newest first. {data.length} found.
+          {q ? 'Best matches first.' : 'Every Claude Code session on this machine, newest first.'} {data.length} found.
         </span>
       </div>
+      <input
+        type="search"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search prompts, replies, files, branches…"
+        aria-label="Search sessions"
+        className="min-h-11 max-w-xl rounded-[10px] border border-border bg-surface px-3.5 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none"
+      />
 
       {data.length === 0 ? (
-        <p className="text-sm text-muted">No sessions found under ~/.claude/projects yet.</p>
+        <p className="text-sm text-muted">{q ? `No sessions match "${q}".` : 'No sessions found under ~/.claude/projects yet.'}</p>
       ) : (
         <>
           <div role="group" aria-label="Filter by repo" className="flex flex-wrap gap-2">

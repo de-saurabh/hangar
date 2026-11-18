@@ -21,7 +21,7 @@ export const api = {
   mcp: (repoId: string) => request<McpResult>(`/api/repos/${repoId}/mcp`),
   revealSetting: (repoId: string, key: string, scope: string) =>
     request<{ value: unknown }>(`/api/repos/${repoId}/settings/value?${new URLSearchParams({ key, scope })}`),
-  sessions: () => request<SessionListItem[]>('/api/sessions'),
+  sessions: (q = '') => request<SessionListItem[]>(q.trim() ? `/api/sessions?${new URLSearchParams({ q })}` : '/api/sessions'),
   session: (id: string) => request<SessionDetail>(`/api/sessions/${encodeURIComponent(id)}`),
   removeRepo: (id: string) => request<void>(`/api/repos/${id}`, { method: 'DELETE' }),
 }
