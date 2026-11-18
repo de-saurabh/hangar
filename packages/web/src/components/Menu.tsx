@@ -1,10 +1,21 @@
 import { useId, useRef, type ReactNode, type ToggleEvent } from 'react'
 
+const ICON_TRIGGER = 'grid size-[34px] place-items-center rounded-lg text-muted hover:bg-hover hover:text-text'
+
+interface Props {
+  label: string
+  trigger: ReactNode
+  children: ReactNode
+  /** Replaces the default square icon-button look of the trigger. */
+  triggerClassName?: string
+  width?: string
+}
+
 /**
  * A button that opens a small panel under it. Uses the native popover API, so
  * Esc, click-outside, focus return and top-layer stacking come from the browser.
  */
-export function Menu({ label, trigger, children }: { label: string; trigger: ReactNode; children: ReactNode }) {
+export function Menu({ label, trigger, children, triggerClassName = ICON_TRIGGER, width = 'w-72' }: Props) {
   const id = useId()
   const button = useRef<HTMLButtonElement>(null)
 
@@ -23,7 +34,7 @@ export function Menu({ label, trigger, children }: { label: string; trigger: Rea
         type="button"
         popoverTarget={id}
         aria-label={label}
-        className="grid size-[34px] cursor-pointer place-items-center rounded-lg border-0 bg-transparent text-muted hover:bg-hover hover:text-text"
+        className={`cursor-pointer border-0 bg-transparent ${triggerClassName}`}
       >
         {trigger}
       </button>
@@ -31,7 +42,7 @@ export function Menu({ label, trigger, children }: { label: string; trigger: Rea
         id={id}
         popover="auto"
         onToggle={place}
-        className="fixed inset-auto m-0 w-72 rounded-[10px] border border-border bg-surface p-2 text-text shadow-lg"
+        className={`fixed inset-auto m-0 ${width} rounded-[10px] border border-border bg-surface p-2 text-text shadow-lg`}
       >
         {children}
       </div>

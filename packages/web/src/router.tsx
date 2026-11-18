@@ -2,7 +2,7 @@ import { createRootRoute, createRoute, createRouter } from '@tanstack/react-rout
 import { Layout } from './Layout'
 import { ConfigIndex } from './routes/ConfigIndex'
 import { ConfigPage } from './routes/Config'
-import { Dashboard } from './routes/Dashboard'
+import { Dashboard } from './routes/dashboard/Dashboard'
 import { LibraryPage } from './routes/Library'
 import { InsightsPage } from './routes/Insights'
 import { SessionPage } from './routes/Session'

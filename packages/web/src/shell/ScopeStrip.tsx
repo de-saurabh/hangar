@@ -4,6 +4,7 @@ import { api } from '../api'
 import { RepoAvatar } from '../components/RepoAvatar'
 import { inRepo, isActive, useLive } from '../live'
 import { useScope } from '../scope'
+import { ManageRepos } from './ManageRepos'
 
 /**
  * The repo scope: a flat strip under the header that filters everything below
@@ -35,6 +36,7 @@ export function ScopeStrip() {
           {r.name}
         </Tab>
       ))}
+      <ManageRepos />
     </div>
   )
 }

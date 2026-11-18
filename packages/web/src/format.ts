@@ -44,3 +44,9 @@ export function offsetLabel(startIso: string | undefined, atIso: string): string
   const sec = s % 60
   return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}` : `${m}:${String(sec).padStart(2, '0')}`
 }
+
+/** How full the context window is, 0-100, or undefined when the transcript doesn't say. An estimate. */
+export function contextPct(s: { contextTokens?: number; contextWindow?: number }): number | undefined {
+  if (s.contextTokens === undefined || !s.contextWindow) return undefined
+  return Math.min(100, Math.round((s.contextTokens / s.contextWindow) * 100))
+}

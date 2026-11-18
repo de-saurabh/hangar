@@ -68,3 +68,28 @@ body {
     animation-duration: 0.01ms !important;
   }
 }
+
+/*
+ * Session side panel: a non-modal top-layer panel that slides in from the right.
+ * Open/close are transitions on display + overlay so it also animates out.
+ */
+.side-panel {
+  opacity: 0;
+  transition-property: opacity, translate, display, overlay;
+  transition-duration: 0.2s;
+  transition-timing-function: ease-out;
+  transition-behavior: allow-discrete;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .side-panel {
+    translate: 100% 0;
+  }
+}
+.side-panel:popover-open {
+  opacity: 1;
+  translate: 0 0;
+  @starting-style {
+    opacity: 0;
+    translate: 100% 0;
+  }
+}

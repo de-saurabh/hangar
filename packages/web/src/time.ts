@@ -12,3 +12,6 @@ export function timeAgo(iso: string, now: number = Date.now()): string {
   if (d < 14) return `${d} days ago`
   return new Date(iso).toLocaleDateString()
 }
+
+/** How long ago a ms-epoch moment was, without the "ago": "12 min", "3 h". */
+export const elapsed = (ms: number): string => timeAgo(new Date(ms).toISOString()).replace(/ ago$/, '')

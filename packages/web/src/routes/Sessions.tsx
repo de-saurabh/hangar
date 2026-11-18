@@ -3,7 +3,8 @@ import { Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import type { LiveState, SessionListItem } from '@hangar/shared'
 import { api } from '../api'
-import { COLUMNS, groupByColumn } from '../board'
+import { ContextBar } from '../components/ContextMeter'
+import { groupByColumn, LANES } from '../board'
 import { formatCost, formatDuration, shortModel } from '../format'
 import { useLive } from '../live'
 import { timeAgo } from '../time'
@@ -83,7 +84,7 @@ export function SessionsPage() {
           ) : (
             <>
               <div className="grid items-start gap-4 [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))]">
-                {COLUMNS.map((c) => (
+                {LANES.map((c) => (
                   <section key={c.id} className="flex flex-col gap-2.5 rounded-[14px] border border-border bg-surface-2 p-3">
                     <h2 className="m-0 mx-1 mt-1 flex items-center gap-2 text-sm font-bold">
                       <span className={`size-2.5 rounded-full ${c.dot}`} />
@@ -117,21 +118,6 @@ export function SessionsPage() {
 
 function Grid({ children }: { children: React.ReactNode }) {
   return <div className="grid items-start gap-4 [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))]">{children}</div>
-}
-
-export function ContextBar({ s }: { s: Pick<SessionListItem, 'contextTokens' | 'contextWindow'> }) {
-  if (s.contextTokens === undefined || !s.contextWindow) return null
-  const pct = Math.min(100, Math.round((s.contextTokens / s.contextWindow) * 100))
-  return (
-    <span className="flex items-center gap-2">
-      <span className="h-[5px] flex-1 overflow-hidden rounded-[3px] bg-border">
-        <span className={`block h-full ${pct > 80 ? 'bg-error' : 'bg-accent'}`} style={{ width: `${pct}%` }} />
-      </span>
-      <span className="w-[66px] text-right text-[11px] text-muted" title="Estimate: window size is inferred from the transcript">
-        ctx ~{pct}%
-      </span>
-    </span>
-  )
 }
 
 function SessionCard({ s, live }: { s: SessionListItem; live: LiveState | undefined }) {

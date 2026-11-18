@@ -5,7 +5,7 @@ import type { EventKind, SessionEvent } from '@hangar/shared'
 import { api } from '../api'
 import { formatCost, formatDuration, formatTokens, offsetLabel, shortModel } from '../format'
 import { timeAgo } from '../time'
-import { ContextBar } from './Sessions'
+import { ContextBar } from '../components/ContextMeter'
 
 type Filter = 'all' | 'you' | 'tools' | 'issues'
 const FILTERS: [Filter, string][] = [
