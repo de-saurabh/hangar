@@ -1,34 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { useState, type FormEvent } from 'react'
-import { api } from './api'
+import { api } from '../api'
 
-export function App() {
+export function Dashboard() {
   return (
-    <div className="min-h-screen">
-      <header className="flex items-center gap-7 border-b border-border bg-surface-2 px-7 py-3">
-        <span className="flex items-center gap-2.5 text-lg font-bold">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent" aria-hidden="true">
-            <path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />
-          </svg>
-          Hangar
-        </span>
-        <HealthBadge />
-      </header>
-      <main className="mx-auto flex max-w-5xl flex-col gap-5 px-7 pb-12 pt-6">
-        <Repos />
-      </main>
+    <div className="flex flex-col gap-5">
+      <Repos />
     </div>
-  )
-}
-
-function HealthBadge() {
-  const { data, isError } = useQuery({ queryKey: ['health'], queryFn: api.health })
-  if (isError) return <span className="text-sm text-error">Server unreachable</span>
-  if (!data) return null
-  return (
-    <span className="text-sm text-muted">
-      v{data.version} · {data.claudeHomeFound ? '~/.claude found' : '~/.claude not found'}
-    </span>
   )
 }
 
@@ -77,17 +56,31 @@ function Repos() {
           + Add repo
         </button>
       </form>
-      {add.error && <p role="alert" className="text-sm text-error">{add.error.message}</p>}
+      {add.error && (
+        <p role="alert" className="text-sm text-error">
+          {add.error.message}
+        </p>
+      )}
 
       {isPending && <p className="text-sm text-muted">Loading…</p>}
-      {error && <p role="alert" className="text-sm text-error">Couldn't load repos: {error.message}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-error">
+          Couldn't load repos: {error.message}
+        </p>
+      )}
       {repos?.length === 0 && <p className="text-sm text-muted">No repos yet. Add one to get started.</p>}
 
       <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
         {repos?.map((r) => (
           <div key={r.id} className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4">
             <div className="flex items-start justify-between gap-2">
-              <span className="text-[15px] font-bold">{r.name}</span>
+              <Link
+                to="/repos/$repoId/config"
+                params={{ repoId: r.id }}
+                className="text-[15px] font-bold text-text hover:text-accent"
+              >
+                {r.name}
+              </Link>
               <button
                 type="button"
                 onClick={() => remove.mutate(r.id)}
