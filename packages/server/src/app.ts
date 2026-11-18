@@ -30,6 +30,8 @@ import { SessionIndex, withRepo } from './sessions.js'
 import { buildDashboard } from './dashboard.js'
 import { LiveStore } from './live.js'
 import { discoverFiles, discoverHooks, publicItem } from './sources/library.js'
+import { CopyError, planCopy, type CopyTarget } from './libraryCopy.js'
+import { applyFiles, previewFiles } from './settingsWrite.js'
 import { ApprovalTracker } from './approvals.js'
 import { AllowlistError, applyAdd, isAllowed, previewAdd, targetPath, type AllowTarget } from './allowlist.js'
 import { recentCommits } from './sources/gitHistory.js'
@@ -275,6 +277,45 @@ export function createApp(opts: AppOptions) {
     const { repos } = await loadConfig()
     const [files, hooks] = await Promise.all([discoverFiles(home, repos), discoverHooks(home, repos)])
     res.set('Cache-Control', 'no-store').json({ items: [...files.map(publicItem), ...hooks] })
+  })
+
+  const resolveCopy = async (b: Record<string, unknown>) => {
+    if (typeof b.itemId !== 'string' || (b.scope !== 'global' && b.scope !== 'repo')) throw new RepoError('Body must be { "itemId": string, "scope": "global" | "repo", "repoId"?: string }', 400)
+    const home = opts.claudeHome ?? claudeHome()
+    const { repos } = await loadConfig()
+    const item = (await discoverFiles(home, repos)).find((i) => i.id === b.itemId)
+    if (!item) throw new RepoError('Library item not found', 404)
+    let target: CopyTarget = { scope: 'global' }
+    if (b.scope === 'repo') {
+      const repo = repos.find((r) => r.id === b.repoId)
+      if (!repo) throw new RepoError('Repo not found', 404)
+      target = { scope: 'repo', repo }
+    }
+    try {
+      return await planCopy(item, home, target)
+    } catch (e) {
+      if (e instanceof CopyError) throw new RepoError(e.message, e.status)
+      throw e
+    }
+  }
+
+  /** Diff of copying a command, agent or skill to a repo or to ~/.claude. Read-only. */
+  app.post('/api/library/copy/preview', async (req, res) => {
+    const edits = await resolveCopy((req.body ?? {}) as Record<string, unknown>)
+    res.set('Cache-Control', 'no-store').json(await previewFiles(edits))
+  })
+
+  /** Writes the copy; needs the token of the preview the user saw. Overwritten files are backed up. */
+  app.post('/api/library/copy/apply', async (req, res) => {
+    const b = (req.body ?? {}) as Record<string, unknown>
+    if (typeof b.token !== 'string') throw new RepoError('Body must include the preview token', 400)
+    const edits = await resolveCopy(b)
+    try {
+      res.json(await applyFiles(edits, b.token))
+    } catch (e) {
+      if (e instanceof StaleTokenError) throw new RepoError(e.message, 409)
+      throw e
+    }
   })
 
   app.get('/api/dashboard', async (_req, res) => {
