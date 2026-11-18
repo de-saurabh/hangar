@@ -269,7 +269,10 @@ function recordFile(s: SessionState, path: string, added: number, removed: numbe
 function failureKey(name: string, input: Obj): string {
   const label = toolLabel(name)
   if (name === 'Bash' || name === 'PowerShell') {
-    const cmd = (str(input.command) ?? '').replace(/^(\s*[A-Za-z_][A-Za-z0-9_]*=\S*\s+)+/, '')
+    // The command that did the work: skip setup segments like `cd "some path" &&` and leading VAR=value.
+    const segments = (str(input.command) ?? '').split(/&&|\|\||;|\n/)
+    const real = segments.find((s) => !/^\s*(cd|pushd|popd|export|set|source|\.)\b/.test(s)) ?? segments[0] ?? ''
+    const cmd = real.replace(/^(\s*[A-Za-z_][A-Za-z0-9_]*=\S*\s+)+/, '').replace(/["']/g, '')
     const words = redactText(cmd).trim().split(/\s+/).slice(0, 2).join(' ')
     return words ? `${label} ${truncate(words, 40)}` : label
   }

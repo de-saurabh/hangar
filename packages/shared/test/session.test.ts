@@ -278,3 +278,18 @@ describe('failure tracking', () => {
     expect(summarize(s).failures).toEqual([{ key: 'BASH deploy --prod', count: 1 }])
   })
 })
+
+describe('failure keys for compound commands', () => {
+  it('uses the command that did the work, not a leading cd or export', () => {
+    const s = run(
+      [
+        toolUse('a', 'Bash', { command: 'cd "D:/My Docs/project" && npm test -- x' }, 1),
+        toolResult('a', 2, { isError: true, text: 'boom' }),
+        toolUse('b', 'Bash', { command: 'export A=1; pnpm build' }, 3),
+        toolResult('b', 4, { isError: true, text: 'boom' }),
+      ],
+      false,
+    )
+    expect(summarize(s).failures.map((f) => f.key).sort()).toEqual(['BASH npm test', 'BASH pnpm build'])
+  })
+})
