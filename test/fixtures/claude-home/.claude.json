@@ -1,0 +1,18 @@
+{
+  "numStartups": 1,
+  "oauthAccount": { "emailAddress": "fixture-user@example.invalid", "accessToken": "FIXTURE-ACCOUNT-SECRET" },
+  "mcpServers": {
+    "github": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@example/github-mcp", "--token", "FIXTURE-ARG-SECRET"],
+      "env": { "GITHUB_TOKEN": "FIXTURE-ENV-SECRET" }
+    },
+    "linear": {
+      "type": "http",
+      "url": "https://mcp.example.invalid/sse?key=FIXTURE-QUERY-SECRET",
+      "headers": { "Authorization": "Bearer FIXTURE-HEADER-SECRET" }
+    }
+  },
+  "projects": {}
+}

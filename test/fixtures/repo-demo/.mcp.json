@@ -1,0 +1,5 @@
+{
+  "mcpServers": {
+    "postgres": { "command": "node", "args": ["./scripts/pg-mcp.js"], "env": { "DATABASE_URL": "FIXTURE-DB-SECRET" } }
+  }
+}
