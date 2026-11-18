@@ -1,4 +1,4 @@
-import type { InsightsSummary, Suggestion, UsageInsightsResponse, ApiError, Dashboard, Prefs, InstallPreview, LiveState, EffectiveSettings, HealthResponse, McpResult, MemoryFile, Repo, RepoView, SessionDetail, SessionListItem } from '@hangar/shared'
+import type { InsightsSummary, LintFinding, Suggestion, UsageInsightsResponse, ApiError, Dashboard, Prefs, InstallPreview, LiveState, EffectiveSettings, HealthResponse, McpResult, MemoryFile, Repo, RepoView, SessionDetail, SessionListItem } from '@hangar/shared'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
@@ -36,6 +36,7 @@ export const api = {
   hooksPreview: () => request<InstallPreview>('/api/hooks/install'),
   hooksApply: (action: 'install' | 'uninstall', token: string) =>
     request<{ backupPath?: string }>('/api/hooks/install', { method: 'POST', body: JSON.stringify({ action, token }) }),
+  lint: (repoId: string) => request<{ findings: LintFinding[]; filesChecked: number }>(`/api/repos/${repoId}/lint`),
   usage: (days = 14) => request<UsageInsightsResponse>(`/api/insights/usage?days=${days}`),
   insightsSummary: () => request<InsightsSummary>('/api/insights/summary'),
   allowlist: () => request<{ suggestions: Suggestion[] }>('/api/insights/allowlist'),

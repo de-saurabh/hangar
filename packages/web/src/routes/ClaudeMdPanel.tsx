@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { LARGE_MEMORY_TOKENS, type MemoryFile } from '@hangar/shared'
+import { LARGE_MEMORY_TOKENS, type LintFinding, type MemoryFile } from '@hangar/shared'
 import { api } from '../api'
 import { timeAgo } from '../time'
 
@@ -57,6 +57,47 @@ export function ClaudeMdPanel({ repoId }: { repoId: string }) {
           </div>
         )
       })}
+      <Findings repoId={repoId} />
     </aside>
+  )
+}
+
+function Findings({ repoId }: { repoId: string }) {
+  const { data, isError } = useQuery({ queryKey: ['lint', repoId], queryFn: () => api.lint(repoId) })
+  if (isError) return <p className="text-xs text-muted">Couldn't check CLAUDE.md files.</p>
+  if (!data || data.filesChecked === 0) return null
+  return (
+    <section aria-label="CLAUDE.md check" className="flex flex-col gap-2 border-t border-border pt-3">
+      <h3 className="m-0 text-sm font-bold">Check</h3>
+      {data.findings.length === 0 && <p className="m-0 text-sm text-running">No problems found.</p>}
+      {data.findings.map((f, i) => (
+        <Finding key={i} f={f} />
+      ))}
+    </section>
+  )
+}
+
+const RULE_LABEL: Record<LintFinding['rule'], string> = {
+  'stale-path': 'Stale path',
+  'broken-import': 'Broken import',
+  duplicate: 'Duplicate',
+  conflict: 'Possible conflict',
+  size: 'Large file',
+  'section-size': 'Long section',
+}
+
+function Finding({ f }: { f: LintFinding }) {
+  return (
+    <div className="flex flex-col gap-0.5 rounded-lg border border-border bg-surface-2 px-3 py-2 text-[13px]">
+      <span className="flex flex-wrap items-baseline gap-x-2">
+        <b className={f.severity === 'warning' ? 'text-waiting' : 'text-muted'}>{RULE_LABEL[f.rule]}</b>
+        <span className="break-all font-mono text-xs text-muted">
+          {f.file}
+          {f.line ? `:${f.line}` : ''}
+        </span>
+      </span>
+      <span>{f.message}</span>
+      {f.suggestion && <span className="text-xs text-muted">{f.suggestion}</span>}
+    </div>
   )
 }
