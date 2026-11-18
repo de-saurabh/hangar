@@ -26,6 +26,7 @@ export interface HookPayload {
   cwd?: unknown
   tool_name?: unknown
   tool_input?: unknown
+  tool_use_id?: unknown
   notification_type?: unknown
   message?: unknown
 }
