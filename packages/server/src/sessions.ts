@@ -1,9 +1,13 @@
 import {
   applyLine,
+  isInside,
+  lastSegment,
   createSessionState,
   summarize,
   type FileChange,
   type SessionEvent,
+  type Repo,
+  type SessionListItem,
   type SessionState,
   type SessionSummary,
   type TaskItem,
@@ -113,6 +117,15 @@ export class SessionIndex {
       .sort((a, b) => (b.lastEventAt ?? '').localeCompare(a.lastEventAt ?? ''))
   }
 
+  /** Current task list per session id (only sessions that have one). */
+  taskLists(): Map<string, TaskItem[]> {
+    const out = new Map<string, TaskItem[]>()
+    for (const e of this.entries.values()) {
+      if (e.holder.state.tasks.length > 0) out.set(e.file.sessionId, e.holder.state.tasks)
+    }
+    return out
+  }
+
   /** Ranked ids of sessions matching the query (prefix + light fuzzy). Empty query matches nothing. */
   search(query: string): string[] {
     if (!query.trim()) return []
@@ -171,3 +184,16 @@ export class SessionIndex {
     }
   }
 }
+
+/** Attach the registered repo containing the session's cwd (most specific wins). */
+export function withRepo(s: SessionSummary, repos: Repo[]): SessionListItem {
+  const match = s.cwd
+    ? repos.filter((r) => isInside(s.cwd as string, r.path)).sort((a, b) => b.path.length - a.path.length)[0]
+    : undefined
+  return {
+    ...s,
+    ...(match ? { repoId: match.id } : {}),
+    repoName: match?.name ?? (s.cwd ? lastSegment(s.cwd) : 'unknown'),
+  }
+}
+

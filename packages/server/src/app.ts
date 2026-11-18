@@ -7,23 +7,19 @@ import {
   AddRepoBodySchema,
   effectiveSettings,
   flatten,
-  isInside,
-  lastSegment,
   maskSensitiveValues,
   SCOPE_PRECEDENCE,
   PrefsPatchSchema,
   type HealthResponse,
-  type Repo,
   type RepoView,
   type SessionDetail,
-  type SessionListItem,
-  type SessionSummary,
 } from '@hangar/shared'
 import { addRepo, loadConfig, removeRepo, RepoError, saveConfig } from './config.js'
 import { read as readMemory } from './sources/claudeMd.js'
 import { defaultClaudeJsonPath, read as readMcp } from './sources/mcp.js'
 import { claudeHome, read as readSettings } from './sources/settings.js'
-import { SessionIndex } from './sessions.js'
+import { SessionIndex, withRepo } from './sessions.js'
+import { buildDashboard } from './dashboard.js'
 import { LiveStore } from './live.js'
 import { createAlerter, desktopSender } from './notify.js'
 import { apply as applyHooks, preview as previewHooks, SettingsParseError, StaleTokenError } from './hookInstall.js'
@@ -63,18 +59,6 @@ export interface AppOptions {
   startLive?: boolean
   /** Override the desktop notification sender (tests). */
   sendDesktop?: (title: string, message: string) => void
-}
-
-/** Attach the registered repo containing the session's cwd (most specific wins). */
-function withRepo(s: SessionSummary, repos: Repo[]): SessionListItem {
-  const match = s.cwd
-    ? repos.filter((r) => isInside(s.cwd as string, r.path)).sort((a, b) => b.path.length - a.path.length)[0]
-    : undefined
-  return {
-    ...s,
-    ...(match ? { repoId: match.id } : {}),
-    repoName: match?.name ?? (s.cwd ? lastSegment(s.cwd) : 'unknown'),
-  }
 }
 
 export function createApp(opts: AppOptions) {
@@ -202,6 +186,10 @@ export function createApp(opts: AppOptions) {
       if (e instanceof SettingsParseError) throw new RepoError(e.message, 422)
       throw e
     }
+  })
+
+  app.get('/api/dashboard', async (_req, res) => {
+    res.set('Cache-Control', 'no-store').json(await buildDashboard({ index: sessions, live, claudeHome: opts.claudeHome ?? claudeHome() }))
   })
 
   app.get('/api/prefs', async (_req, res) => {
