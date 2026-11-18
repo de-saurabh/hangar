@@ -9,7 +9,10 @@ import {
   flatten,
   maskSensitiveValues,
   SCOPE_PRECEDENCE,
+  buildUsageInsights,
+  localDateKey,
   PrefsPatchSchema,
+  type UsageInsightsResponse,
   type HealthResponse,
   type RepoView,
   type SessionDetail,
@@ -190,6 +193,17 @@ export function createApp(opts: AppOptions) {
 
   app.get('/api/dashboard', async (_req, res) => {
     res.set('Cache-Control', 'no-store').json(await buildDashboard({ index: sessions, live, claudeHome: opts.claudeHome ?? claudeHome() }))
+  })
+
+  app.get('/api/insights/usage', async (req, res) => {
+    await sessions.refresh()
+    const config = await loadConfig()
+    const days = Math.min(90, Math.max(1, Number.parseInt(String(req.query.days ?? '14'), 10) || 14))
+    const usage = buildUsageInsights(sessions.usageInputs(config.repos), days)
+    const budget = config.prefs.dailyBudgetUSD
+    const todayCost = usage.days.find((d) => d.date === localDateKey(new Date()))?.cost ?? 0
+    const body: UsageInsightsResponse = { ...usage, budget: { dailyBudgetUSD: budget, todayCost, over: budget !== null && todayCost > budget } }
+    res.set('Cache-Control', 'no-store').json(body)
   })
 
   app.get('/api/prefs', async (_req, res) => {

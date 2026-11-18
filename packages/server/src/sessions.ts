@@ -1,5 +1,7 @@
 import {
   applyLine,
+  usageRecords,
+  type SessionUsageInput,
   isInside,
   lastSegment,
   createSessionState,
@@ -115,6 +117,19 @@ export class SessionIndex {
       .map((e) => summarize(e.holder.state))
       .filter((s) => s.lastEventAt !== undefined)
       .sort((a, b) => (b.lastEventAt ?? '').localeCompare(a.lastEventAt ?? ''))
+  }
+
+  /** Per-session usage records and reported cost, for insights. */
+  usageInputs(repos: Repo[]): SessionUsageInput[] {
+    return [...this.entries.values()].map((e) => {
+      const sum = summarize(e.holder.state)
+      return {
+        id: sum.id,
+        repoName: withRepo(sum, repos).repoName,
+        ...(sum.costUSD !== undefined ? { costUSD: sum.costUSD } : {}),
+        records: usageRecords(e.holder.state),
+      }
+    })
   }
 
   /** Current task list per session id (only sessions that have one). */

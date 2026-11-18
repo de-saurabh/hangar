@@ -40,6 +40,17 @@ export interface UsageBucket {
   cost: number
 }
 
+export interface BudgetStatus {
+  dailyBudgetUSD: number | null
+  todayCost: number
+  /** True once today's (possibly estimated) cost exceeds the budget. */
+  over: boolean
+}
+
+export interface UsageInsightsResponse extends UsageInsights {
+  budget: BudgetStatus
+}
+
 export interface UsageInsights {
   /** Oldest first; always `days` entries, zero-filled. */
   days: DayUsage[]

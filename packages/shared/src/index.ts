@@ -29,14 +29,19 @@ export const HangarConfigSchema = z
   .object({
     version: z.literal(1).default(1),
     repos: z.array(RepoSchema).default([]),
-    prefs: z.object({ desktopAlerts: z.boolean().default(false) }).passthrough().default({ desktopAlerts: false }),
+    prefs: z
+      .object({ desktopAlerts: z.boolean().default(false), dailyBudgetUSD: z.number().positive().nullable().default(null) })
+      .passthrough()
+      .default({ desktopAlerts: false, dailyBudgetUSD: null }),
   })
   .passthrough()
 export type HangarConfig = z.infer<typeof HangarConfigSchema>
 
 /** User preferences stored in ~/.hangar/config.json. */
 export type Prefs = HangarConfig['prefs']
-export const PrefsPatchSchema = z.object({ desktopAlerts: z.boolean().optional() }).strict()
+export const PrefsPatchSchema = z
+  .object({ desktopAlerts: z.boolean().optional(), dailyBudgetUSD: z.number().positive().max(1_000_000).nullable().optional() })
+  .strict()
 
 /** A repo as returned by the API: `exists` is false if the folder has gone missing. */
 export type RepoView = Repo & { exists: boolean }
