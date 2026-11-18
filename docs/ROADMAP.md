@@ -13,7 +13,9 @@
 ## M2 — Sessions (passive)
 - Transcript parser → normalised `SessionEvent`s. Incremental tailing (read only new bytes).
 - **Session detail**: timeline with filters, files changed, context %, compactions, cost, `claude --resume <id>` copy.
-- SQLite index + FTS5 search across sessions (with secret redaction).
+- ~~SQLite index~~ **No DB (measured):** parse + reduce takes about 125 ms for a 29 MB transcript, so sessions are indexed in memory and tailed incrementally. Cross-session search (MiniSearch, with secret redaction) is still to do.
+- **Done:** reducer (shared), incremental reader, SessionIndex, `/api/sessions`, Sessions list + Session detail screens (polling every 5 s until SSE in M3).
+- **Not yet:** search, task list panel (storage not located), cost estimate for live sessions (no `cost-state` until the run ends), subagent transcripts.
 
 ## M3 — Live & global board (the headline feature)
 - Install global hooks (consent + diff + backup) → `/hook` endpoint → SSE.
