@@ -13,6 +13,10 @@
   --color-waiting: #fbbf24;
   --color-error: #f87171;
   --color-done: #c4b5fd;
+  --color-scope-user: #c4b5fd;
+  --color-scope-project: #8ab4ff;
+  --color-scope-local: #fdba74;
+  --color-scope-managed: #5eead4;
   --font-sans: 'Inter Variable', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
 }
