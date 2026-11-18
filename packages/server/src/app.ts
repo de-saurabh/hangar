@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import express, { type ErrorRequestHandler, type RequestHandler } from 'express'
 import { AddRepoBodySchema, effectiveSettings, type HealthResponse, type RepoView } from '@hangar/shared'
 import { addRepo, loadConfig, removeRepo, RepoError } from './config.js'
+import { read as readMemory } from './sources/claudeMd.js'
 import { claudeHome, read as readSettings } from './sources/settings.js'
 
 const LOOPBACK_HOST = /^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/i
@@ -83,6 +84,13 @@ export function createApp(opts: AppOptions) {
     if (!repo) throw new RepoError('Repo not found', 404)
     const layers = await readSettings({ claudeHome: opts.claudeHome ?? claudeHome(), repoPath: repo.path })
     res.json(effectiveSettings(layers))
+  })
+
+  app.get('/api/repos/:id/memory', async (req, res) => {
+    const { repos } = await loadConfig()
+    const repo = repos.find((r) => r.id === req.params.id)
+    if (!repo) throw new RepoError('Repo not found', 404)
+    res.json(await readMemory({ claudeHome: opts.claudeHome ?? claudeHome(), repoPath: repo.path }))
   })
 
   app.use('/api', (_req, res) => {
