@@ -11,6 +11,8 @@ import {
 import { api } from '../api'
 import { SCOPE_CHIP, SCOPE_LABEL } from '../scopes'
 import { ClaudeMdPanel } from './ClaudeMdPanel'
+import { HooksPanel } from './HooksPanel'
+import { McpPanel } from './McpPanel'
 
 type Tab = 'effective' | SettingScope
 const TABS: { id: Tab; label: string }[] = [
@@ -69,7 +71,7 @@ export function ConfigPage({ repoId }: { repoId: string }) {
               Couldn't load settings: {settings.error.message}
             </p>
           )}
-          {settings.data && <ConfigBody settings={settings.data} tab={tab} />}
+          {settings.data && <ConfigBody settings={settings.data} tab={tab} repoId={repoId} />}
         </div>
         <ClaudeMdPanel repoId={repoId} />
       </div>
@@ -77,7 +79,7 @@ export function ConfigPage({ repoId }: { repoId: string }) {
   )
 }
 
-function ConfigBody({ settings, tab }: { settings: EffectiveSettings; tab: Tab }) {
+function ConfigBody({ settings, tab, repoId }: { settings: EffectiveSettings; tab: Tab; repoId: string }) {
   const layer = tab === 'effective' ? undefined : settings.layers.find((l) => l.scope === tab)
   return (
     <>
@@ -94,6 +96,10 @@ function ConfigBody({ settings, tab }: { settings: EffectiveSettings; tab: Tab }
           <RuleColumn kind="ask" settings={settings} tab={tab} />
         </div>
       </section>
+      <div className="flex flex-wrap gap-5">
+        <HooksPanel hooks={settings.hooks} tab={tab} />
+        <McpPanel repoId={repoId} tab={tab} />
+      </div>
     </>
   )
 }
