@@ -66,6 +66,27 @@ export function flatten(obj: Record<string, unknown>, prefix = ''): Map<string, 
 
 const rank = (s: SettingScope) => SCOPE_PRECEDENCE.indexOf(s)
 
+export interface ScopeValue {
+  key: string
+  value: unknown
+  /** Set when a higher-precedence layer wins this key, so this layer's value is inactive. */
+  overriddenBy?: SettingScope
+}
+
+/** What one layer sets, for the per-scope tabs. `values` must come from `effectiveSettings`. */
+export function valuesForScope(values: SettingValue[], scope: SettingScope): ScopeValue[] {
+  const out: ScopeValue[] = []
+  for (const v of values) {
+    if (v.source === scope) {
+      out.push({ key: v.key, value: v.value })
+    } else {
+      const lost = v.overrides.find((o) => o.source === scope)
+      if (lost) out.push({ key: v.key, value: lost.value, overriddenBy: v.source })
+    }
+  }
+  return out
+}
+
 export function effectiveSettings(layers: SettingsLayer[]): EffectiveSettings {
   const ordered = [...layers].sort((a, b) => rank(a.scope) - rank(b.scope))
 

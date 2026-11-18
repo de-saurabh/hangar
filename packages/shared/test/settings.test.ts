@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { effectiveSettings, flatten, type SettingsLayer } from '../src/index'
+import { effectiveSettings, flatten, valuesForScope, type SettingsLayer } from '../src/index'
 
 const layer = (scope: SettingsLayer['scope'], data?: Record<string, unknown>): SettingsLayer => ({
   scope,
@@ -65,5 +65,24 @@ describe('effectiveSettings', () => {
     ])
     expect(eff.permissions.allow).toEqual([{ rule: 'ok', sources: ['user'] }])
     expect(eff.layers.find((l) => l.scope === 'project')?.error).toBe('Invalid JSON')
+  })
+})
+
+describe('valuesForScope', () => {
+  const eff = effectiveSettings([
+    layer('user', { model: 'sonnet', outputStyle: 'concise' }),
+    layer('project', { model: 'opus' }),
+  ])
+
+  it('lists what a layer sets and flags values a higher layer overrides', () => {
+    expect(valuesForScope(eff.values, 'project')).toEqual([{ key: 'model', value: 'opus' }])
+    expect(valuesForScope(eff.values, 'user')).toEqual([
+      { key: 'model', value: 'sonnet', overriddenBy: 'project' },
+      { key: 'outputStyle', value: 'concise' },
+    ])
+  })
+
+  it('is empty for a layer that sets nothing', () => {
+    expect(valuesForScope(eff.values, 'local')).toEqual([])
   })
 })
