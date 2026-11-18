@@ -72,3 +72,25 @@ export async function currentBranch(repoPath: string): Promise<string | undefine
   const out = (await git(repoPath, ['rev-parse', '--abbrev-ref', 'HEAD'])).trim()
   return out && out !== 'HEAD' ? out : undefined
 }
+
+export interface Commit {
+  commit: string
+  date: string
+  subject: string
+}
+
+/**
+ * Recent non-merge commit subjects on the current branch, newest first.
+ * Fails soft to [] outside a git repo.
+ */
+export async function recentCommits(repoPath: string, opts: { sinceDays?: number; limit?: number } = {}): Promise<Commit[]> {
+  const out = await git(repoPath, ['log', `--since=${opts.sinceDays ?? 7}.days`, '--no-merges', '-n', String(opts.limit ?? 30), `--pretty=format:%H%x09%ct%x09%s`])
+  const commits: Commit[] = []
+  for (const l of out.split('\n')) {
+    const [hash, ct, ...rest] = l.split('\t')
+    const d = new Date(Number(ct) * 1000)
+    if (!hash || Number.isNaN(d.getTime())) continue
+    commits.push({ commit: hash.slice(0, 7), date: d.toISOString(), subject: rest.join('\t').slice(0, 120) })
+  }
+  return commits
+}

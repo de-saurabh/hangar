@@ -9,9 +9,12 @@ import {
   flatten,
   maskSensitiveValues,
   SCOPE_PRECEDENCE,
+  buildStuck,
   buildUsageInsights,
   localDateKey,
   PrefsPatchSchema,
+  type InsightsSummary,
+  type ShippedItem,
   type UsageInsightsResponse,
   type HealthResponse,
   type RepoView,
@@ -24,6 +27,7 @@ import { claudeHome, read as readSettings } from './sources/settings.js'
 import { SessionIndex, withRepo } from './sessions.js'
 import { buildDashboard } from './dashboard.js'
 import { LiveStore } from './live.js'
+import { recentCommits } from './sources/gitHistory.js'
 import { createAlerter, desktopSender } from './notify.js'
 import { apply as applyHooks, preview as previewHooks, SettingsParseError, StaleTokenError } from './hookInstall.js'
 
@@ -203,6 +207,35 @@ export function createApp(opts: AppOptions) {
     const budget = config.prefs.dailyBudgetUSD
     const todayCost = usage.days.find((d) => d.date === localDateKey(new Date()))?.cost ?? 0
     const body: UsageInsightsResponse = { ...usage, budget: { dailyBudgetUSD: budget, todayCost, over: budget !== null && todayCost > budget } }
+    res.set('Cache-Control', 'no-store').json(body)
+  })
+
+  app.get('/api/insights/summary', async (_req, res) => {
+    await sessions.refresh()
+    const { repos } = await loadConfig()
+    const windowDays = 14
+    const since = Date.now() - windowDays * 24 * 60 * 60_000
+    const recent = sessions
+      .summaries()
+      .filter((s) => s.lastEventAt && Date.parse(s.lastEventAt) >= since)
+      .map((s) => withRepo(s, repos))
+
+    const stuck = buildStuck(recent.map((s) => ({ id: s.id, repoName: s.repoName, failures: s.failures, ...(s.contextTokens !== undefined ? { contextTokens: s.contextTokens } : {}), ...(s.contextWindow ? { contextWindow: s.contextWindow } : {}) })))
+
+    // Shipped: last 7 days. Registered repos get commits too; other sessions are listed by repo name.
+    const weekAgo = Date.now() - 7 * 24 * 60 * 60_000
+    const names = new Map<string, ShippedItem>()
+    const entry = (repoName: string) => names.get(repoName) ?? names.set(repoName, { repoName, sessions: [], commits: [] }).get(repoName)!
+    for (const s of recent) {
+      if (s.lastEventAt && Date.parse(s.lastEventAt) >= weekAgo && s.titleSource !== 'none') entry(s.repoName).sessions.push(s.title)
+    }
+    await Promise.all(
+      repos.map(async (r) => {
+        const commits = await recentCommits(r.path, { sinceDays: 7, limit: 8 })
+        if (commits.length > 0) entry(r.name).commits.push(...commits.map((c) => ({ commit: c.commit, subject: c.subject })))
+      }),
+    )
+    const body: InsightsSummary = { windowDays, stuck, shipped: [...names.values()].filter((x) => x.sessions.length + x.commits.length > 0) }
     res.set('Cache-Control', 'no-store').json(body)
   })
 

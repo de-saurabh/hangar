@@ -72,3 +72,33 @@ describe('buildUsageInsights', () => {
     expect(localDateKey(new Date(2026, 0, 5))).toBe('2026-01-05')
   })
 })
+
+import { buildStuck } from '../src/index'
+
+describe('buildStuck', () => {
+  const s = (id: string, repoName: string, failures: { key: string; count: number }[], ctx?: number) => ({
+    id,
+    repoName,
+    failures,
+    ...(ctx !== undefined ? { contextTokens: ctx, contextWindow: 100 } : {}),
+  })
+
+  it('reports commands failing 3+ times across sessions, with a tip naming the repo', () => {
+    const out = buildStuck([s('1', 'web-app', [{ key: 'BASH npm test', count: 2 }]), s('2', 'web-app', [{ key: 'BASH npm test', count: 3 }]), s('3', 'api', [{ key: 'BASH ls', count: 1 }])])
+    expect(out.items).toEqual([{ kind: 'repeated-failure', what: 'npm test kept failing', detail: '5 failures in 2 sessions', repoName: 'web-app' }])
+    expect(out.tip).toBe('Tip: add how to run and set up "npm test" to web-app/CLAUDE.md.')
+  })
+
+  it('ignores routine failures (READ) and one-offs', () => {
+    expect(buildStuck([s('1', 'a', [{ key: 'READ', count: 50 }, { key: 'BASH make', count: 2 }])])).toEqual({ items: [] })
+  })
+
+  it('reports failing MCP servers and sessions over 80% context', () => {
+    const out = buildStuck([s('1', 'a', [{ key: 'MCP linear', count: 3 }], 85), s('2', 'a', [], 79), s('3', 'a', [], 95)])
+    expect(out.items.map((i) => [i.kind, i.what, i.detail])).toEqual([
+      ['mcp', 'linear MCP calls failed', '3 failed calls'],
+      ['high-context', 'Context over 80% before finishing', '2 sessions'],
+    ])
+    expect(out.tip).toBeUndefined()
+  })
+})

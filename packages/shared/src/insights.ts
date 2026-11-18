@@ -147,3 +147,81 @@ export function buildUsageInsights(sessions: SessionUsageInput[], dayCount: numb
     unpricedTokens,
   }
 }
+
+export interface StuckInput {
+  id: string
+  repoName: string
+  contextTokens?: number
+  contextWindow?: number
+  failures: { key: string; count: number }[]
+}
+
+export interface StuckItem {
+  kind: 'repeated-failure' | 'high-context' | 'mcp'
+  what: string
+  /** Display count, e.g. "5 failures in 3 sessions". */
+  detail: string
+  repoName?: string
+}
+
+export interface StuckInsights {
+  items: StuckItem[]
+  tip?: string
+}
+
+const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`
+
+/**
+ * "Where Claude got stuck": commands that kept failing, sessions that ran
+ * past 80% context, and failing MCP servers. Thresholds are deliberately
+ * conservative so a one-off failure is not reported.
+ */
+export function buildStuck(sessions: StuckInput[]): StuckInsights {
+  const items: StuckItem[] = []
+
+  const byKey = new Map<string, { count: number; sessions: Set<string>; repos: Map<string, number> }>()
+  for (const s of sessions) {
+    for (const f of s.failures) {
+      const e = byKey.get(f.key) ?? { count: 0, sessions: new Set<string>(), repos: new Map<string, number>() }
+      e.count += f.count
+      e.sessions.add(s.id)
+      e.repos.set(s.repoName, (e.repos.get(s.repoName) ?? 0) + f.count)
+      byKey.set(f.key, e)
+    }
+  }
+
+  const topRepo = (e: { repos: Map<string, number> }) => [...e.repos.entries()].sort((a, b) => b[1] - a[1])[0]?.[0]
+  let firstRepeated: { key: string; repo?: string } | undefined
+  for (const [key, e] of [...byKey.entries()].sort((a, b) => b[1].count - a[1].count)) {
+    if (e.count < 3) continue
+    if (key.startsWith('MCP ')) {
+      items.push({ kind: 'mcp', what: `${key.slice(4)} MCP calls failed`, detail: plural(e.count, 'failed call') })
+    } else if (!/^(READ|SEARCH|WEB)$/.test(key)) {
+      // File-not-found style failures are routine; only commands are interesting.
+      const repo = topRepo(e)
+      items.push({ kind: 'repeated-failure', what: `${key.replace(/^[A-Z]+ /, '')} kept failing`, detail: `${plural(e.count, 'failure')} in ${plural(e.sessions.size, 'session')}`, ...(repo ? { repoName: repo } : {}) })
+      firstRepeated ??= { key: key.replace(/^[A-Z]+ /, ''), ...(repo ? { repo } : {}) }
+    }
+  }
+
+  const high = sessions.filter((s) => s.contextTokens !== undefined && s.contextWindow && s.contextTokens / s.contextWindow >= 0.8)
+  if (high.length > 0) items.push({ kind: 'high-context', what: 'Context over 80% before finishing', detail: plural(high.length, 'session') })
+
+  return {
+    items: items.slice(0, 8),
+    ...(firstRepeated ? { tip: `Tip: add how to run and set up "${firstRepeated.key}" to ${firstRepeated.repo ? `${firstRepeated.repo}/` : ''}CLAUDE.md.` } : {}),
+  }
+}
+
+export interface ShippedItem {
+  repoName: string
+  /** Titles of sessions active in the window, newest first. */
+  sessions: string[]
+  commits: { commit: string; subject: string }[]
+}
+
+export interface InsightsSummary {
+  windowDays: number
+  stuck: StuckInsights
+  shipped: ShippedItem[]
+}

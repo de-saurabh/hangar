@@ -75,3 +75,23 @@ describe('recentMemoryChanges', () => {
     expect(await currentBranch(dir)).toBe('main')
   })
 })
+
+import { recentCommits } from '../src/sources/gitHistory.js'
+
+describe('recentCommits', () => {
+  it('lists recent commit subjects newest first and fails soft outside a repo', async () => {
+    await writeFile(join(dir, 'a'), '1')
+    git('add', '.')
+    git('commit', '-q', '-m', 'first')
+    await writeFile(join(dir, 'a'), '2')
+    git('commit', '-qam', 'second')
+    expect((await recentCommits(dir)).map((c) => c.subject)).toEqual(['second', 'first'])
+    expect(await recentCommits(dir, { limit: 1 })).toHaveLength(1)
+    const plain = await mkdtemp(join(tmpdir(), 'hangar-plain-'))
+    try {
+      expect(await recentCommits(plain)).toEqual([])
+    } finally {
+      await rm(plain, { recursive: true, force: true })
+    }
+  })
+})

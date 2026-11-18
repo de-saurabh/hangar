@@ -69,3 +69,33 @@ describe('GET /api/insights/usage', () => {
     expect((await get()).budget.dailyBudgetUSD).toBeNull()
   })
 })
+
+describe('GET /api/insights/summary', () => {
+  it('reports repeated failures and a shipped list built from session titles and commits', async () => {
+    const { execFileSync } = await import('node:child_process')
+    const repo = await mkdtemp(join(tmpdir(), 'hangar-ir-'))
+    try {
+      const g = (...a: string[]) => execFileSync('git', ['-C', repo, '-c', 'user.name=t', '-c', 'user.email=t@e.com', '-c', 'commit.gpgsign=false', ...a])
+      g('init', '-q', '-b', 'main')
+      await writeFile(join(repo, 'a.txt'), 'x')
+      g('add', '.')
+      g('commit', '-q', '-m', 'Add rate limiter')
+
+      const now = new Date().toISOString()
+      const common = { cwd: repo, timestamp: now }
+      const bash = (n: number) =>
+        line({ type: 'assistant', ...common, message: { id: `m${n}`, model: 'm', content: [{ type: 'tool_use', id: `t${n}`, name: 'Bash', input: { command: 'npm test -- x' } }] } }) +
+        line({ type: 'user', ...common, message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: `t${n}`, is_error: true, content: 'fail' }] } })
+      await writeFile(join(claude, 'projects', 'p', 'c.jsonl'), line({ type: 'custom-title', customTitle: 'Add rate limiting' }) + line({ type: 'user', ...common, message: { role: 'user', content: 'go' } }) + bash(1) + bash(2) + bash(3))
+      await fetch(`${base}/api/repos`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ path: repo }) })
+
+      const s = (await (await fetch(`${base}/api/insights/summary`)).json()) as import('@hangar/shared').InsightsSummary
+      expect(s.stuck.items).toMatchObject([{ kind: 'repeated-failure', what: 'npm test kept failing', detail: '3 failures in 1 session' }])
+      expect(s.stuck.tip).toContain('CLAUDE.md')
+      const mine = s.shipped.find((x) => x.commits.some((c) => c.subject === 'Add rate limiter'))
+      expect(mine?.sessions).toContain('Add rate limiting')
+    } finally {
+      await rm(repo, { recursive: true, force: true })
+    }
+  })
+})
