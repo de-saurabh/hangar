@@ -1,0 +1,13 @@
+{
+  // user-level (JSONC: comments are allowed)
+  "model": "sonnet",
+  "outputStyle": "concise",
+  "cleanupPeriodDays": 30,
+  "permissions": {
+    "defaultMode": "default",
+    "allow": ["Bash(git status)", "Bash(npm test:*)"],
+    "deny": ["Read(.env*)"]
+  },
+  "env": { "NODE_ENV": "production" },
+  "someFutureKey": { "nested": true },
+}

@@ -1,0 +1,1 @@
+{ "pid": 11111, "sessionId": "00000000-0000-4000-8000-000000000001", "cwd": "C:\code\demo", "startedAt": 1760000000000, "procStart": "x", "version": "0.0.0-fixture", "kind": "interactive", "entrypoint": "cli", "name": "Demo session", "nameSource": "auto", "status": "busy", "updatedAt": 1760000001000, "statusUpdatedAt": 1760000001000 }
