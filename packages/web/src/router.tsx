@@ -3,7 +3,7 @@ import { Layout } from './Layout'
 import { ConfigIndex } from './routes/ConfigIndex'
 import { ConfigPage } from './routes/Config'
 import { Dashboard } from './routes/dashboard/Dashboard'
-import { LibraryPage } from './routes/Library'
+import { LibraryPage } from './routes/library/Library'
 import { InsightsPage } from './routes/insights/Insights'
 import { SessionsPage } from './routes/sessions/Sessions'
 
