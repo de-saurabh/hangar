@@ -7,15 +7,22 @@ import {
   AddRepoBodySchema,
   effectiveSettings,
   flatten,
+  isInside,
+  lastSegment,
   maskSensitiveValues,
   SCOPE_PRECEDENCE,
   type HealthResponse,
+  type Repo,
   type RepoView,
+  type SessionDetail,
+  type SessionListItem,
+  type SessionSummary,
 } from '@hangar/shared'
 import { addRepo, loadConfig, removeRepo, RepoError } from './config.js'
 import { read as readMemory } from './sources/claudeMd.js'
 import { defaultClaudeJsonPath, read as readMcp } from './sources/mcp.js'
 import { claudeHome, read as readSettings } from './sources/settings.js'
+import { SessionIndex } from './sessions.js'
 
 const LOOPBACK_HOST = /^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/i
 
@@ -50,7 +57,20 @@ export interface AppOptions {
   claudeHome?: string
 }
 
+/** Attach the registered repo containing the session's cwd (most specific wins). */
+function withRepo(s: SessionSummary, repos: Repo[]): SessionListItem {
+  const match = s.cwd
+    ? repos.filter((r) => isInside(s.cwd as string, r.path)).sort((a, b) => b.path.length - a.path.length)[0]
+    : undefined
+  return {
+    ...s,
+    ...(match ? { repoId: match.id } : {}),
+    repoName: match?.name ?? (s.cwd ? lastSegment(s.cwd) : 'unknown'),
+  }
+}
+
 export function createApp(opts: AppOptions) {
+  const sessions = new SessionIndex(opts.claudeHome ?? claudeHome())
   const app = express()
   app.disable('x-powered-by')
   app.use(loopbackOnly)
@@ -125,6 +145,25 @@ export function createApp(opts: AppOptions) {
     if (!repo) throw new RepoError('Repo not found', 404)
     const claudeJsonPath = opts.claudeHome ? join(opts.claudeHome, '.claude.json') : defaultClaudeJsonPath()
     res.json(await readMcp({ claudeJsonPath, repoPath: repo.path }))
+  })
+
+  app.get('/api/sessions', async (_req, res) => {
+    await sessions.refresh()
+    const { repos } = await loadConfig()
+    res.json(sessions.summaries().map((s) => withRepo(s, repos)))
+  })
+
+  app.get('/api/sessions/:id', async (req, res) => {
+    const d = await sessions.detail(String(req.params.id))
+    if (!d) throw new RepoError('Session not found', 404)
+    const { repos } = await loadConfig()
+    const body: SessionDetail = {
+      session: withRepo(d.summary, repos),
+      events: d.events,
+      eventsTruncated: d.eventsTruncated,
+      files: d.files,
+    }
+    res.set('Cache-Control', 'no-store').json(body)
   })
 
   app.use('/api', (_req, res) => {
