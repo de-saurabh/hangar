@@ -31,8 +31,9 @@ const str = (v: unknown): string | undefined => (typeof v === 'string' && v !== 
  * approved. Denied or abandoned prompts are never counted. Only the derived
  * rule string and the working directory are kept; never prompts or output.
  *
- * UNVERIFIED against real Claude Code payloads: the PermissionRequest ->
- * PostToolUse pairing is taken from the hooks docs (see DATA-SOURCES.md).
+ * Verified with real Claude Code 2.1.327: PermissionRequest fires after
+ * PreToolUse (without a tool_use_id), and a denied call gets no PostToolUse.
+ * An interactive approval itself has not been observed (see DATA-SOURCES.md).
  */
 export class ApprovalTracker {
   private pending = new Map<string, Pending>()

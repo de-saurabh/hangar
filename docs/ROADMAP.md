@@ -53,7 +53,7 @@
 
 ### M5 notes
 - Cost per day is an **estimate**: transcripts have no per-day cost, so a session's reported total is spread over its messages by relative token price; running sessions use the same model's observed rate.
-- Allowlist suggestions need hooks enabled (PermissionRequest followed by the same call's PostToolUse = approved by hand). **Unverified with a real session.** Counters live in `~/.hangar/approvals.json` (rule + cwd only). Repo rules are written to `.claude/settings.local.json`, global to `~/.claude/settings.json`, always diff → token → backup.
+- Allowlist suggestions need hooks enabled (PermissionRequest followed by the same call's PostToolUse = approved by hand). Payload order verified with real Claude Code (PermissionRequest then PostToolUse only if approved; see DATA-SOURCES.md); an interactive approval is still unconfirmed. Counters live in `~/.hangar/approvals.json` (rule + cwd only). Repo rules are written to `.claude/settings.local.json`, global to `~/.claude/settings.json`, always diff → token → backup.
 - Weekly "shipped" is deterministic (session titles + git subjects), no LLM.
 
 ### M6 notes

@@ -39,7 +39,7 @@ Without setup, Hangar infers busy/idle from files. To know the moment a session 
 ## Known limits
 
 - Cost per day is an estimate (transcripts carry no per-day cost).
-- Allowlist suggestions rely on hook events that are documented but not yet confirmed against a real session.
+- Allowlist suggestions rely on hook events verified in headless runs; an interactive approval has not been observed yet.
 - Task lists come from `TodoWrite`-style tool calls; the exact shapes are tolerant guesses.
 - Plugin-contributed commands, agents and hooks, managed-settings paths and `@path` imports in CLAUDE.md are not covered yet.
 
