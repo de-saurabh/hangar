@@ -8,7 +8,7 @@
     "allow": ["Bash(git status)", "Bash(npm test:*)"],
     "deny": ["Read(.env*)"]
   },
-  "env": { "NODE_ENV": "production" },
+  "env": { "NODE_ENV": "production", "API_KEY": "FIXTURE-SETTINGS-SECRET" },
   "hooks": {
     "Stop": [{ "hooks": [{ "type": "command", "command": "notify-send \"Claude finished\"" }] }]
   },
