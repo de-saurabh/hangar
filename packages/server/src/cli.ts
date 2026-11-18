@@ -42,7 +42,7 @@ if (!Number.isInteger(requested) || requested < 1 || requested > 65535) {
   process.exit(1)
 }
 
-const app = createApp({ version: readVersion(), webDir: findWebDir() })
+const app = createApp({ version: readVersion(), webDir: findWebDir(), startLive: true })
 
 function listen(port: number, attemptsLeft: number): void {
   const server = app.listen(port, HOST)

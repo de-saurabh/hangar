@@ -23,6 +23,7 @@ import { read as readMemory } from './sources/claudeMd.js'
 import { defaultClaudeJsonPath, read as readMcp } from './sources/mcp.js'
 import { claudeHome, read as readSettings } from './sources/settings.js'
 import { SessionIndex } from './sessions.js'
+import { LiveStore } from './live.js'
 
 const LOOPBACK_HOST = /^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/i
 
@@ -55,6 +56,8 @@ export interface AppOptions {
   webDir?: string
   /** Claude Code config dir; defaults to CLAUDE_CONFIG_DIR or ~/.claude. */
   claudeHome?: string
+  /** Start background polling of the live registry. The CLI sets this; tests leave it off. */
+  startLive?: boolean
 }
 
 /** Attach the registered repo containing the session's cwd (most specific wins). */
@@ -71,9 +74,23 @@ function withRepo(s: SessionSummary, repos: Repo[]): SessionListItem {
 
 export function createApp(opts: AppOptions) {
   const sessions = new SessionIndex(opts.claudeHome ?? claudeHome())
+  const live = new LiveStore(opts.claudeHome ?? claudeHome())
+  if (opts.startLive) live.start()
   const app = express()
   app.disable('x-powered-by')
   app.use(loopbackOnly)
+  // Hook payloads can carry whole file contents (Write tool input), so they get a roomier parser.
+  // Always answer 200 {}: Hangar must never make a Claude Code hook fail.
+  const hookBody = express.json({ limit: '25mb', strict: false })
+  const hookIngest: RequestHandler = (req, res) => {
+    if (typeof req.body === 'object' && req.body !== null) live.ingest(req.body)
+    res.json({})
+  }
+  // Unparseable body: still 200, so the hook shows no error.
+  const hookLenient: ErrorRequestHandler = (_err, _req, res, _next) => {
+    res.json({})
+  }
+  app.post('/api/hook', hookBody, hookIngest, hookLenient)
   app.use(express.json({ limit: '100kb' }))
 
   app.get('/api/health', (_req, res) => {
@@ -145,6 +162,29 @@ export function createApp(opts: AppOptions) {
     if (!repo) throw new RepoError('Repo not found', 404)
     const claudeJsonPath = opts.claudeHome ? join(opts.claudeHome, '.claude.json') : defaultClaudeJsonPath()
     res.json(await readMcp({ claudeJsonPath, repoPath: repo.path }))
+  })
+
+  app.get('/api/live', async (_req, res) => {
+    await live.poll()
+    res.set('Cache-Control', 'no-store').json(live.snapshot())
+  })
+
+  /** Server-sent events: a full live snapshot on connect and after every change. */
+  app.get('/api/events', (req, res) => {
+    res.set({ 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' })
+    res.flushHeaders()
+    const send = (event: string, data: unknown) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
+    send('live', live.snapshot())
+    const onUpdate = (s: unknown) => send('live', s)
+    const onTransition = (x: unknown) => send('transition', x)
+    live.on('update', onUpdate)
+    live.on('transition', onTransition)
+    const beat = setInterval(() => res.write(': keep-alive\n\n'), 20_000)
+    req.on('close', () => {
+      clearInterval(beat)
+      live.off('update', onUpdate)
+      live.off('transition', onTransition)
+    })
   })
 
   app.get('/api/sessions', async (req, res) => {
