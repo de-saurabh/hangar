@@ -107,3 +107,10 @@ Before indexing transcripts for search, redact common secret patterns (API keys,
 - ❓ Hook events fire for subagents too (`agent_id` present); Hangar currently folds them into the parent session's status.
 - Privacy: payloads can contain file contents and commands. Hangar keeps only event name, tool name and a redacted, 140-char description of the call; prompt text and tool output are never stored or logged.
 - Performance: PreToolUse/PostToolUse mean a local POST per tool call (a few ms). Timeout is 5 s.
+
+## Tasks and dashboard (M4)
+
+- ❌ No task-list storage found on disk (`~/.claude/tasks` and `~/.claude/todos` absent). Task lists exist only as tool calls in the transcript.
+- ❓ **Unverified shapes** (no such tool in the surveyed transcripts): `TodoWrite` input `{ todos: [{ content, status, activeForm }] }` replaces the whole list; `TaskCreate` (`subject`) / `TaskUpdate` (`taskId`, `status`) edit by id, id taken from `toolUseResult.task.id` if present. `TaskStop` in real data is for background processes, not tasks. Hook events `TaskCreated`/`TaskCompleted` exist and may be a better source later.
+- ✅ `git log --numstat -- CLAUDE.md ...` gives CLAUDE.md change history with no extra storage.
+- Dashboard "today" figures sum per-session totals for sessions active today; transcripts have no per-day usage accounting. "New tokens" excludes cache reads.

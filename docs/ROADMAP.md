@@ -29,6 +29,11 @@
 ## M4 — Dashboard & tasks
 - **Dashboard**: alert strip, today's stats, live sessions, repos with warnings, tasks across repos, recent CLAUDE.md changes (diffs from git history or Hangar's own snapshots).
 
+**Status:** built and verified against synthetic data in the browser and tests.
+- Done: dashboard API + screen; repo warnings (CLAUDE.md over 4k tokens, broad allow rules); CLAUDE.md changes from git history; task lists from transcripts; task panel on the session page.
+- **Tasks are unverified against real data:** no TodoWrite/TaskCreate appears in the surveyed transcripts, so the shapes are tolerant guesses. Confirm when a real session uses them.
+- Not done: Hangar-snapshot fallback for CLAUDE.md changes in non-git repos, per-day token/cost accounting (today's numbers are per session active today), budget line from the mockup.
+
 ## M5 — Insights
 - Cost/tokens per day, per repo, per model; daily budget alert.
 - Allowlist suggestions (commands approved by hand often) — clicking writes the rule after showing a diff.
