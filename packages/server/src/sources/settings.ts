@@ -1,8 +1,7 @@
-import { readFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { parse, type ParseError } from 'jsonc-parser'
 import type { LayerInfo, SettingsLayer } from '@hangar/shared'
+import { readJsonFile } from './json.js'
 
 /** Claude Code's config dir. Honours CLAUDE_CONFIG_DIR like Claude Code does. */
 export function claudeHome(): string {
@@ -43,17 +42,10 @@ export function discover(ctx: SettingsContext): Pick<LayerInfo, 'scope' | 'path'
  * Tolerates comments and trailing commas (JSONC) and unknown keys.
  */
 async function readLayer(target: Pick<LayerInfo, 'scope' | 'path'>): Promise<SettingsLayer> {
-  let raw: string
-  try {
-    raw = await readFile(target.path, 'utf8')
-  } catch (err) {
-    const code = (err as NodeJS.ErrnoException).code
-    if (code === 'ENOENT' || code === 'ENOTDIR') return { ...target, exists: false }
-    return { ...target, exists: true, error: `Couldn't read file (${code ?? 'unknown error'})` }
-  }
-  const errors: ParseError[] = []
-  const data: unknown = parse(raw, errors, { allowTrailingComma: true })
-  if (errors.length > 0) return { ...target, exists: true, error: 'Invalid JSON' }
+  const file = await readJsonFile(target.path)
+  if (!file.exists) return { ...target, exists: false }
+  if (file.error) return { ...target, exists: true, error: file.error }
+  const data = file.data
   if (typeof data !== 'object' || data === null || Array.isArray(data)) {
     return { ...target, exists: true, error: 'Expected a JSON object' }
   }
