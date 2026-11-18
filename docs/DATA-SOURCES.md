@@ -73,6 +73,8 @@ Compute from `usage` in `assistant` lines × a price table per model (one file, 
 
 ## Secrets
 
+**What the API masks by default (implemented):** `env.*` settings whose name looks secret (token, secret, password, api key, credential, private key, auth), any settings value matching a known token format (Anthropic/OpenAI/GitHub/AWS/Slack/Google keys, JWTs, private keys, bearer tokens), and tokens/`KEY=value` assignments inside hook commands. Masked values reach the browser only through an explicit Reveal click (`GET /api/repos/:id/settings/value`, uncached), are never put in the query cache, and auto-hide after 30 s. MCP `args`, `env` values, `headers` and URL credentials/queries are never returned at all. Detection is heuristic: it will miss secrets with unusual formats and shouldn't be treated as a guarantee.
+
 Before indexing transcripts for search, redact common secret patterns (API keys, tokens, `.env` values). Provide a "Secrets scan" view listing where they were found. Maintain a denylist of files that are never read (`.credentials.json`, `*.key`, `history.jsonl` until redaction exists).
 
 ## Open M0 checks
