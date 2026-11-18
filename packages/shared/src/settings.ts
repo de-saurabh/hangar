@@ -1,3 +1,5 @@
+import { hooksFromLayers, type HookEntry } from './hooks'
+
 /**
  * Settings model + pure "effective config" merge. No I/O here: the server
  * adapter reads the files, this turns layers into what Claude Code would use.
@@ -38,6 +40,7 @@ export interface EffectiveSettings {
   layers: LayerInfo[]
   values: SettingValue[]
   permissions: Record<PermissionKind, RuleEntry[]>
+  hooks: HookEntry[]
 }
 
 const PERMISSION_KINDS: PermissionKind[] = ['allow', 'deny', 'ask']
@@ -129,5 +132,6 @@ export function effectiveSettings(layers: SettingsLayer[]): EffectiveSettings {
     layers: layers.map(({ scope, path, exists, error }) => ({ scope, path, exists, ...(error ? { error } : {}) })),
     values,
     permissions,
+    hooks: hooksFromLayers(layers, SCOPE_PRECEDENCE),
   }
 }
