@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+export * from './dashboard'
 export * from './hooks'
 export * from './liveStatus'
 export * from './mcp'

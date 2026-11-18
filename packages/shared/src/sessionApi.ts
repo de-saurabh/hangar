@@ -8,6 +8,12 @@ export interface SessionListItem extends SessionSummary {
   repoName: string
 }
 
+/** A task with the session and repo it belongs to (dashboard "tasks across repos"). */
+export interface TaskItemView extends TaskItem {
+  sessionId: string
+  repoName: string
+}
+
 export interface SessionDetail {
   session: SessionListItem
   events: SessionEvent[]
