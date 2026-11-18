@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs'
-import { stat } from 'node:fs/promises'
+import { readFile, stat } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import express, { type ErrorRequestHandler, type RequestHandler } from 'express'
@@ -10,6 +10,9 @@ import {
   maskSensitiveValues,
   SCOPE_PRECEDENCE,
   buildStuck,
+  scanSecrets,
+  type SecretFinding,
+  type SecretsResponse,
   isInside,
   lintMemory,
   buildUsageInsights,
@@ -188,6 +191,37 @@ export function createApp(opts: AppOptions) {
       },
     })
     res.set('Cache-Control', 'no-store').json({ findings, filesChecked: files.length })
+  })
+
+  /** Where credentials sit in the files Claude Code reads for this repo. Reports file/line/kind only, never values. */
+  app.get('/api/repos/:id/secrets', async (req, res) => {
+    const { repos } = await loadConfig()
+    const repo = repos.find((r) => r.id === req.params.id)
+    if (!repo) throw new RepoError('Repo not found', 404)
+    const home = opts.claudeHome ?? claudeHome()
+    const targets: { path: string; label: string; shared: boolean }[] = [
+      { path: join(home, 'settings.json'), label: '~/.claude/settings.json', shared: false },
+      { path: join(home, 'CLAUDE.md'), label: '~/.claude/CLAUDE.md', shared: false },
+      { path: join(repo.path, 'CLAUDE.md'), label: `${repo.name}/CLAUDE.md`, shared: true },
+      { path: join(repo.path, 'CLAUDE.local.md'), label: `${repo.name}/CLAUDE.local.md`, shared: false },
+      { path: join(repo.path, '.mcp.json'), label: `${repo.name}/.mcp.json`, shared: true },
+      { path: join(repo.path, '.claude', 'settings.json'), label: `${repo.name}/.claude/settings.json`, shared: true },
+      { path: join(repo.path, '.claude', 'settings.local.json'), label: `${repo.name}/.claude/settings.local.json`, shared: false },
+    ]
+    const findings: SecretFinding[] = []
+    let filesChecked = 0
+    for (const t of targets) {
+      try {
+        if ((await stat(t.path)).size > 2_000_000) continue
+        const text = await readFile(t.path, 'utf8')
+        filesChecked++
+        for (const h of scanSecrets(text)) findings.push({ ...h, file: t.label, shared: t.shared })
+      } catch {
+        // missing or unreadable: nothing to scan
+      }
+    }
+    const body: SecretsResponse = { findings, filesChecked }
+    res.set('Cache-Control', 'no-store').json(body)
   })
 
   app.get('/api/repos/:id/mcp', async (req, res) => {

@@ -11,6 +11,7 @@ import {
 import { api } from '../api'
 import { SCOPE_CHIP, SCOPE_LABEL } from '../scopes'
 import { ClaudeMdPanel } from './ClaudeMdPanel'
+import { SecretsPanel } from './SecretsPanel'
 import { HooksPanel } from './HooksPanel'
 import { McpPanel } from './McpPanel'
 import { ValueCell } from './ValueCell'
@@ -74,7 +75,10 @@ export function ConfigPage({ repoId }: { repoId: string }) {
           )}
           {settings.data && <ConfigBody settings={settings.data} tab={tab} repoId={repoId} />}
         </div>
-        <ClaudeMdPanel repoId={repoId} />
+        <div className="flex min-w-0 flex-[1_1_360px] flex-col gap-5">
+          <ClaudeMdPanel repoId={repoId} />
+          <SecretsPanel repoId={repoId} />
+        </div>
       </div>
     </div>
   )

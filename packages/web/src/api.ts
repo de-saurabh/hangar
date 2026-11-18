@@ -1,4 +1,4 @@
-import type { BackupInfo, TemplateInfo, FilesPreviewView, LibraryResponse, InsightsSummary, LintFinding, Suggestion, UsageInsightsResponse, ApiError, Dashboard, Prefs, InstallPreview, LiveState, EffectiveSettings, HealthResponse, McpResult, MemoryFile, Repo, RepoView, SessionDetail, SessionListItem } from '@hangar/shared'
+import type { SecretsResponse, BackupInfo, TemplateInfo, FilesPreviewView, LibraryResponse, InsightsSummary, LintFinding, Suggestion, UsageInsightsResponse, ApiError, Dashboard, Prefs, InstallPreview, LiveState, EffectiveSettings, HealthResponse, McpResult, MemoryFile, Repo, RepoView, SessionDetail, SessionListItem } from '@hangar/shared'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
@@ -56,6 +56,7 @@ export const api = {
   templateApply: (b: TemplateBody & { token: string }) => request<{ written: number; backupPaths: string[] }>('/api/templates/apply', { method: 'POST', body: JSON.stringify(b) }),
   backup: () => request<BackupInfo>('/api/backup'),
   runBackup: () => request<{ changed: boolean; files: number }>('/api/backup/run', { method: 'POST' }),
+  secrets: (repoId: string) => request<SecretsResponse>(`/api/repos/${repoId}/secrets`),
   usage: (days = 14) => request<UsageInsightsResponse>(`/api/insights/usage?days=${days}`),
   insightsSummary: () => request<InsightsSummary>('/api/insights/summary'),
   allowlist: () => request<{ suggestions: Suggestion[] }>('/api/insights/allowlist'),

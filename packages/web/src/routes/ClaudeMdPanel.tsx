@@ -19,7 +19,7 @@ export function ClaudeMdPanel({ repoId }: { repoId: string }) {
   const files = data?.filter((f) => f.exists) ?? []
 
   return (
-    <aside className="flex min-w-0 flex-[1_1_360px] flex-col gap-3 rounded-[14px] border border-border bg-surface p-[18px]">
+    <aside className="flex min-w-0 flex-col gap-3 rounded-[14px] border border-border bg-surface p-[18px]">
       <h2 className="text-[17px] font-bold">CLAUDE.md files</h2>
       <span className="text-[13px] text-muted">Instructions Claude Code loads for this repo, in this order. Token counts are estimates.</span>
 
