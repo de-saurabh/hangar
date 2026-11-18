@@ -3,8 +3,9 @@ import { stat } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import express, { type ErrorRequestHandler, type RequestHandler } from 'express'
-import { AddRepoBodySchema, type HealthResponse, type RepoView } from '@hangar/shared'
+import { AddRepoBodySchema, effectiveSettings, type HealthResponse, type RepoView } from '@hangar/shared'
 import { addRepo, loadConfig, removeRepo, RepoError } from './config.js'
+import { claudeHome, read as readSettings } from './sources/settings.js'
 
 const LOOPBACK_HOST = /^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/i
 
@@ -35,6 +36,8 @@ export interface AppOptions {
   version: string
   /** Directory with the built web app. If missing, only the API is served. */
   webDir?: string
+  /** Claude Code config dir; defaults to CLAUDE_CONFIG_DIR or ~/.claude. */
+  claudeHome?: string
 }
 
 export function createApp(opts: AppOptions) {
@@ -72,6 +75,14 @@ export function createApp(opts: AppOptions) {
   app.delete('/api/repos/:id', async (req, res) => {
     await removeRepo(String(req.params.id))
     res.status(204).end()
+  })
+
+  app.get('/api/repos/:id/settings', async (req, res) => {
+    const { repos } = await loadConfig()
+    const repo = repos.find((r) => r.id === req.params.id)
+    if (!repo) throw new RepoError('Repo not found', 404)
+    const layers = await readSettings({ claudeHome: opts.claudeHome ?? claudeHome(), repoPath: repo.path })
+    res.json(effectiveSettings(layers))
   })
 
   app.use('/api', (_req, res) => {
