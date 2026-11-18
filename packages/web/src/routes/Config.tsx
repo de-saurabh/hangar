@@ -13,6 +13,7 @@ import { SCOPE_CHIP, SCOPE_LABEL } from '../scopes'
 import { ClaudeMdPanel } from './ClaudeMdPanel'
 import { HooksPanel } from './HooksPanel'
 import { McpPanel } from './McpPanel'
+import { ValueCell } from './ValueCell'
 
 type Tab = 'effective' | SettingScope
 const TABS: { id: Tab; label: string }[] = [
@@ -86,7 +87,7 @@ function ConfigBody({ settings, tab, repoId }: { settings: EffectiveSettings; ta
       <LayerStatus layers={settings.layers} tab={tab} layer={layer} />
       <section className="flex flex-col gap-1.5 rounded-[14px] border border-border bg-surface p-[18px]">
         <h2 className="mb-1.5 text-[17px] font-bold">Settings</h2>
-        <SettingsRows settings={settings} tab={tab} />
+        <SettingsRows settings={settings} tab={tab} repoId={repoId} />
       </section>
       <section className="flex flex-col gap-2.5 rounded-[14px] border border-border bg-surface p-[18px]">
         <h2 className="text-[17px] font-bold">Permissions</h2>
@@ -131,7 +132,7 @@ function LayerStatus({ layers, tab, layer }: { layers: LayerInfo[]; tab: Tab; la
   )
 }
 
-function SettingsRows({ settings, tab }: { settings: EffectiveSettings; tab: Tab }) {
+function SettingsRows({ settings, tab, repoId }: { settings: EffectiveSettings; tab: Tab; repoId: string }) {
   if (tab === 'effective') {
     if (settings.values.length === 0) return <p className="text-sm text-muted">No settings found.</p>
     return (
@@ -139,7 +140,14 @@ function SettingsRows({ settings, tab }: { settings: EffectiveSettings; tab: Tab
         {settings.values.map((v) => (
           <div key={v.key} className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 border-b border-[#1e222b] py-2.5">
             <span className="basis-[220px] font-mono text-[13px]">{v.key}</span>
-            <span className="min-w-40 flex-1 break-all font-mono text-[13px]">{show(v.value)}</span>
+            <ValueCell
+              repoId={repoId}
+              settingKey={v.key}
+              scope={v.source}
+              value={v.value}
+              masked={v.masked}
+              className="min-w-40 flex-1 break-all font-mono text-[13px]"
+            />
             <Chip scope={v.source} />
             {v.overrides.length > 0 && (
               <span className="basis-full text-xs text-muted">
@@ -166,9 +174,14 @@ function SettingsRows({ settings, tab }: { settings: EffectiveSettings; tab: Tab
       {rows.map((r) => (
         <div key={r.key} className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 border-b border-[#1e222b] py-2.5">
           <span className="basis-[220px] font-mono text-[13px]">{r.key}</span>
-          <span className={`min-w-40 flex-1 break-all font-mono text-[13px] ${r.overriddenBy ? 'text-muted line-through' : ''}`}>
-            {show(r.value)}
-          </span>
+          <ValueCell
+            repoId={repoId}
+            settingKey={r.key}
+            scope={tab}
+            value={r.value}
+            masked={r.masked}
+            className={`min-w-40 flex-1 break-all font-mono text-[13px] ${r.overriddenBy ? 'text-muted line-through' : ''}`}
+          />
           {r.overriddenBy ? (
             <span className="text-xs text-muted">Overridden by {SCOPE_LABEL[r.overriddenBy]}</span>
           ) : (

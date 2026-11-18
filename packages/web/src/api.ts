@@ -19,5 +19,7 @@ export const api = {
   settings: (repoId: string) => request<EffectiveSettings>(`/api/repos/${repoId}/settings`),
   memory: (repoId: string) => request<MemoryFile[]>(`/api/repos/${repoId}/memory`),
   mcp: (repoId: string) => request<McpResult>(`/api/repos/${repoId}/mcp`),
+  revealSetting: (repoId: string, key: string, scope: string) =>
+    request<{ value: unknown }>(`/api/repos/${repoId}/settings/value?${new URLSearchParams({ key, scope })}`),
   removeRepo: (id: string) => request<void>(`/api/repos/${id}`, { method: 'DELETE' }),
 }
