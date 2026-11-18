@@ -42,7 +42,13 @@ One JSON object per line. A 290-line session contained these `type` values: `use
 - `api-request*` lines are large and may duplicate prompt content. Skip them when indexing.
 - Sidechains (`isSidechain: true`) are subagent turns. Decide in M2 whether to fold into the parent.
 - Transcripts may contain secrets. Redact before indexing.
-- ❓ Compaction marker: not seen in this sample. Look for it in a longer session.
+- **Survey of all transcripts on the dev machine (M2 prep):** 7 files, 50 MB total, largest 29 MB, longest line 569 KB, 18.7k lines, 0 unparseable, 0 sidechain lines, no `subagents/` dirs. Verdict: **no database needed**; parse files, cache a summary per file keyed by size+mtime, tail incrementally.
+- **More line types seen:** `ai-title` (`aiTitle`), `custom-title` (`customTitle`, user-set; wins over ai-title), `cost-state`, `system/compact_boundary`, `system/informational`, `queue-operation`, `bridge-session`, `frame-link`, `artifact-*`. Attachment subtypes include `total_tokens_reminder`, `task_reminder`, `task_status`, `edited_text_file`, `nested_memory`, `hook_system_message`, `plan_mode`.
+- **Cost (authoritative):** `cost-state` lines carry `totalCostUSD`, `totalAPIDuration`, `totalToolDuration`, `totalDuration`, `totalLinesAdded`, `totalLinesRemoved`, `startTime`, `hasUnknownModelCost` and `modelUsage[model]` (`inputTokens`, `outputTokens`, `thinkingTokens`, `cacheReadInputTokens`, `cacheCreationInputTokens`, `costUSD`). Use the **last** one per session; fall back to `usage` x price table only when absent. Resumed sessions may continue the same totals (unverified).
+- **Compaction:** `system/compact_boundary` with `compactMetadata`: `trigger`, `preTokens`, `postTokens`, `cumulativeDroppedTokens`, `durationMs`. The following `user` line has `isCompactSummary: true` (huge text; never index or show). Seen: 393336 -> 8583 tokens, so the context window can exceed 200k.
+- **Context size at a point:** last assistant `usage`: `input_tokens + cache_read_input_tokens + cache_creation_input_tokens`. The window size is not in the transcript; infer (200k default, larger if a compaction `preTokens` exceeds it) and label as estimate.
+- **Tools seen:** Bash, PowerShell, Read, Edit, Write, Glob, Grep, Skill, ToolSearch, WebFetch, WebSearch, AskUserQuestion, ExitPlanMode, TaskStop, Artifact, and `mcp__<server>__<tool>`. File edits: `user` lines with `toolUseResult.filePath` + `structuredPatch`. Tool results: `user` lines with `tool_result` blocks (`tool_use_id`, `is_error`).
+- ❓ **Task lists:** still not located. `task_reminder` attachments have `content[]` + `itemCount` (empty in the sample); inspect one with items in M4.
 
 ## Live registry (`~/.claude/sessions/<pid>.json`)
 
