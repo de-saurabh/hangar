@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import type { McpServer, SettingScope } from '@hangar/shared'
 import { api } from '../api'
 import { SCOPE_CHIP, SCOPE_LABEL } from '../scopes'
@@ -40,12 +40,26 @@ export function McpPanel({ repoId, tab }: { repoId: string; tab: 'effective' | S
           </span>
           <span className="break-all font-mono text-xs text-muted">{detail(s)}</span>
           {s.overriddenBy && <span className="text-xs text-muted">Overridden by the {SCOPE_LABEL[s.overriddenBy]} server of the same name</span>}
+          <HealthCheck repoId={repoId} server={s} />
           {s.approval && s.approval !== 'approved' && (
             <span className="text-xs text-waiting">{s.approval === 'rejected' ? 'Rejected in Claude Code' : 'Not yet approved in Claude Code'}</span>
           )}
         </div>
       ))}
-      <span className="text-xs text-muted">Not health-checked. Health checks come later and run only when you ask.</span>
+      <span className="text-xs text-muted">Health checks run only when you click Check. HTTP servers get one request with no credentials; stdio servers are looked up on PATH, never started.</span>
     </section>
+  )
+}
+
+function HealthCheck({ repoId, server }: { repoId: string; server: McpServer }) {
+  const check = useMutation({ mutationFn: () => api.checkMcp(repoId, server.name, server.scope) })
+  return (
+    <span className="flex flex-wrap items-center gap-2 text-xs">
+      <button type="button" disabled={check.isPending} onClick={() => check.mutate()} className="cursor-pointer border-0 bg-transparent p-0 text-xs text-accent underline disabled:opacity-50">
+        {check.isPending ? 'Checking…' : check.data ? 'Check again' : 'Check'}
+      </button>
+      {check.data && <span className={check.data.ok ? 'text-running' : 'text-error'}>{check.data.summary}</span>}
+      {check.error && <span role="alert" className="text-error">{check.error.message}</span>}
+    </span>
   )
 }
