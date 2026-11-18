@@ -6,6 +6,7 @@ import {
   type SessionEvent,
   type SessionState,
   type SessionSummary,
+  type TaskItem,
 } from '@hangar/shared'
 import MiniSearch from 'minisearch'
 import { discover, TranscriptTail, type TranscriptFile } from './sources/transcripts.js'
@@ -27,6 +28,7 @@ export interface SessionDetailData {
   events: SessionEvent[]
   eventsTruncated: boolean
   files: FileChange[]
+  tasks: TaskItem[]
 }
 
 const DETAIL_CACHE_SIZE = 3
@@ -165,6 +167,7 @@ export class SessionIndex {
       events: state.events,
       eventsTruncated: state.eventsTruncated,
       files: [...state.files.values()],
+      tasks: state.tasks,
     }
   }
 }

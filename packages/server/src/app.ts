@@ -261,6 +261,7 @@ export function createApp(opts: AppOptions) {
       events: d.events,
       eventsTruncated: d.eventsTruncated,
       files: d.files,
+      tasks: d.tasks,
     }
     res.set('Cache-Control', 'no-store').json(body)
   })

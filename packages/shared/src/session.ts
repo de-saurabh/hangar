@@ -28,6 +28,21 @@ export interface FileChange {
   created?: boolean
 }
 
+export type TaskStatus = 'pending' | 'in_progress' | 'completed'
+
+/** One item of a session's task list (from TodoWrite, or TaskCreate/TaskUpdate). */
+export interface TaskItem {
+  id: string
+  text: string
+  status: TaskStatus
+}
+
+export interface TaskCounts {
+  open: number
+  inProgress: number
+  done: number
+}
+
 export interface TokenTotals {
   input: number
   output: number
@@ -57,6 +72,7 @@ export interface SessionSummary {
   /** Inferred (200k default, larger if a compaction proved otherwise). An estimate. */
   contextWindow?: number
   compactions: number
+  tasks: TaskCounts
   linesAdded?: number
   linesRemoved?: number
   version?: string
@@ -95,6 +111,9 @@ export interface SessionState {
   /** Redacted prompt/assistant text for search, bounded by MAX_SEARCH_CHARS. */
   searchChunks: string[]
   searchChars: number
+  /** Current task list. Unverified formats: see docs/DATA-SOURCES.md. */
+  tasks: TaskItem[]
+  taskByToolUse: Map<string, TaskItem>
 }
 
 interface Usage {
@@ -128,6 +147,8 @@ export function createSessionState(id: string, opts: { keepEvents?: boolean } = 
     seq: 0,
     searchChunks: [],
     searchChars: 0,
+    tasks: [],
+    taskByToolUse: new Map(),
   }
 }
 
@@ -235,11 +256,64 @@ function recordFile(s: SessionState, path: string, added: number, removed: numbe
   s.files.set(path, f)
 }
 
+const MAX_TASKS = 200
+
+function normStatus(v: unknown): TaskStatus | 'deleted' {
+  const x = typeof v === 'string' ? v.toLowerCase().replace(/[\s-]/g, '_') : ''
+  if (x === 'completed' || x === 'complete' || x === 'done') return 'completed'
+  if (x === 'in_progress' || x === 'inprogress' || x === 'active') return 'in_progress'
+  if (x === 'deleted' || x === 'cancelled' || x === 'canceled') return 'deleted'
+  return 'pending'
+}
+
+/**
+ * Task lists. TodoWrite replaces the whole list each call; TaskCreate/
+ * TaskUpdate edit items by id. Both shapes are tolerant guesses (no task tool
+ * appears in the surveyed transcripts), so anything odd is ignored.
+ */
+function applyTaskTool(s: SessionState, name: string, input: Obj, toolUseId: string | undefined): void {
+  if (name === 'TodoWrite') {
+    if (!Array.isArray(input.todos)) return
+    s.tasks = input.todos.slice(0, MAX_TASKS).flatMap((t, i) => {
+      if (!isObj(t)) return []
+      const text = clean(str(t.content) ?? str(t.subject) ?? '', 160)
+      const status = normStatus(t.status)
+      return text && status !== 'deleted' ? [{ id: `todo${i}`, text, status }] : []
+    })
+    return
+  }
+  if (name === 'TaskCreate') {
+    const text = clean(str(input.subject) ?? str(input.content) ?? str(input.description) ?? '', 160)
+    if (!text || s.tasks.length >= MAX_TASKS) return
+    const task: TaskItem = { id: str(input.taskId) ?? str(input.id) ?? `task${s.seq}`, text, status: 'pending' }
+    s.tasks.push(task)
+    if (toolUseId) s.taskByToolUse.set(toolUseId, task)
+    return
+  }
+  if (name === 'TaskUpdate') {
+    const id = str(input.taskId) ?? str(input.id)
+    const task = id ? s.tasks.find((t) => t.id === id) : undefined
+    if (!task) return
+    if (input.status !== undefined) {
+      const status = normStatus(input.status)
+      if (status === 'deleted') s.tasks = s.tasks.filter((t) => t !== task)
+      else task.status = status
+    }
+    const text = str(input.subject)
+    if (text) task.text = clean(text, 160)
+  }
+}
+
 function applyToolResults(s: SessionState, raw: Obj, ts: string): void {
   const content = isObj(raw.message) ? raw.message.content : undefined
   if (Array.isArray(content)) {
     for (const b of content) {
       if (!isObj(b) || b.type !== 'tool_result') continue
+      // A TaskCreate result may carry the id later TaskUpdate calls refer to.
+      const created = s.taskByToolUse.get(str(b.tool_use_id) ?? '')
+      const rt = raw.toolUseResult
+      const newId = created && isObj(rt) ? (isObj(rt.task) ? str(rt.task.id) : str(rt.taskId) ?? str(rt.id)) : undefined
+      if (created && newId) created.id = newId
       const idx = s.toolEvent.get(str(b.tool_use_id) ?? '')
       if (b.is_error === true) {
         const ev = idx !== undefined ? s.events[idx] : undefined
@@ -331,6 +405,7 @@ function applyAssistant(s: SessionState, raw: Obj, ts: string): void {
       })
       const toolUseId = str(b.id)
       if (toolUseId && idx >= 0) s.toolEvent.set(toolUseId, idx)
+      applyTaskTool(s, name, input, toolUseId)
     }
   }
 }
@@ -431,6 +506,11 @@ export function summarize(s: SessionState): SessionSummary {
       ? { contextTokens: s.contextTokens, contextWindow: s.maxObservedTokens > 200_000 ? 1_000_000 : 200_000 }
       : {}),
     compactions: s.compactions,
+    tasks: {
+      open: s.tasks.filter((t) => t.status !== 'completed').length,
+      inProgress: s.tasks.filter((t) => t.status === 'in_progress').length,
+      done: s.tasks.filter((t) => t.status === 'completed').length,
+    },
     linesAdded: s.cost?.added ?? fileAdded,
     linesRemoved: s.cost?.removed ?? fileRemoved,
     ...(s.version ? { version: s.version } : {}),

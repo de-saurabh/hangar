@@ -1,4 +1,4 @@
-import type { FileChange, SessionEvent, SessionSummary } from './session'
+import type { FileChange, SessionEvent, SessionSummary, TaskItem } from './session'
 
 /** A session as listed by the API: the summary plus which repo it belongs to. */
 export interface SessionListItem extends SessionSummary {
@@ -14,6 +14,7 @@ export interface SessionDetail {
   /** True if the timeline was cut short to bound memory. */
   eventsTruncated: boolean
   files: FileChange[]
+  tasks: TaskItem[]
 }
 
 /** True if `child` is `parent` or inside it. Separator- and (on Windows) case-insensitive. */

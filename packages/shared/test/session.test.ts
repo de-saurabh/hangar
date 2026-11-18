@@ -200,3 +200,48 @@ describe('resumed sessions', () => {
     expect(summarize(s).tokens.output).toBe(30)
   })
 })
+
+describe('task lists', () => {
+  const todo = (todos: object[], n: number) => toolUse(`td${n}`, 'TodoWrite', { todos }, n)
+
+  it('TodoWrite replaces the whole list and counts by status', () => {
+    const s = run([
+      todo([{ content: 'Read middleware', status: 'completed' }, { content: 'Add limiter', status: 'in_progress' }, { content: 'Add tests', status: 'pending' }], 1),
+      todo([{ content: 'Read middleware', status: 'completed' }, { content: 'Add limiter', status: 'completed' }, { content: 'Add tests', status: 'in_progress' }, { content: 'Docs', status: 'pending' }], 2),
+    ])
+    expect(s.tasks.map((t) => [t.text, t.status])).toEqual([
+      ['Read middleware', 'completed'],
+      ['Add limiter', 'completed'],
+      ['Add tests', 'in_progress'],
+      ['Docs', 'pending'],
+    ])
+    expect(summarize(s).tasks).toEqual({ open: 2, inProgress: 1, done: 2 })
+  })
+
+  it('tolerates junk todos and unknown statuses, and redacts text', () => {
+    const s = run([todo([null, 5, { status: 'pending' }, { content: 'Use API_TOKEN=abcdef123456', status: 'weird' }, { content: 'Gone', status: 'deleted' }], 1)])
+    expect(s.tasks).toHaveLength(1)
+    expect(s.tasks[0]?.status).toBe('pending')
+    expect(s.tasks[0]?.text).not.toContain('abcdef123456')
+    expect(() => run([toolUse('x', 'TodoWrite', { todos: 'nope' }, 1)])).not.toThrow()
+  })
+
+  it('TaskCreate/TaskUpdate edit items by id, taking the id from the create result when present', () => {
+    const s = run([
+      toolUse('c1', 'TaskCreate', { subject: 'Write migration' }, 1),
+      toolResult('c1', 2, { result: { task: { id: '7' } } }),
+      toolUse('c2', 'TaskCreate', { subject: 'Add tests' }, 3),
+      toolUse('u1', 'TaskUpdate', { taskId: '7', status: 'completed' }, 4),
+      toolUse('u2', 'TaskUpdate', { taskId: 'missing', status: 'completed' }, 5),
+    ])
+    expect(s.tasks.map((t) => [t.id, t.text, t.status])).toEqual([
+      ['7', 'Write migration', 'completed'],
+      [expect.any(String), 'Add tests', 'pending'],
+    ])
+  })
+
+  it('deleting via TaskUpdate removes the item', () => {
+    const s = run([toolUse('c1', 'TaskCreate', { subject: 'x', taskId: 'a' }, 1), toolUse('u1', 'TaskUpdate', { taskId: 'a', status: 'deleted' }, 2)])
+    expect(s.tasks).toEqual([])
+  })
+})
