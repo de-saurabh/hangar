@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+export * from './memory'
 export * from './settings'
 
 /**
