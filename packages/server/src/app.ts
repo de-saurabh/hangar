@@ -32,6 +32,7 @@ import { LiveStore } from './live.js'
 import { discoverFiles, discoverHooks, publicItem } from './sources/library.js'
 import { CopyError, planCopy, type CopyTarget } from './libraryCopy.js'
 import { applyFiles, previewFiles } from './settingsWrite.js'
+import { planTemplate, TEMPLATES } from './templates.js'
 import { ApprovalTracker } from './approvals.js'
 import { AllowlistError, applyAdd, isAllowed, previewAdd, targetPath, type AllowTarget } from './allowlist.js'
 import { recentCommits } from './sources/gitHistory.js'
@@ -314,6 +315,40 @@ export function createApp(opts: AppOptions) {
       res.json(await applyFiles(edits, b.token))
     } catch (e) {
       if (e instanceof StaleTokenError) throw new RepoError(e.message, 409)
+      throw e
+    }
+  })
+
+  app.get('/api/templates', (_req, res) => {
+    res.json({ templates: TEMPLATES.map(({ id, name, summary }) => ({ id, name, summary })) })
+  })
+
+  const resolveTemplate = async (b: Record<string, unknown>) => {
+    const t = TEMPLATES.find((x) => x.id === b.templateId)
+    if (!t) throw new RepoError('Template not found', 404)
+    const repo = (await loadConfig()).repos.find((r) => r.id === b.repoId)
+    if (!repo) throw new RepoError('Repo not found', 404)
+    return planTemplate(t, repo.path)
+  }
+
+  /** Diff of applying a template to a repo. Existing files are kept; read-only. */
+  app.post('/api/templates/preview', async (req, res) => {
+    try {
+      res.set('Cache-Control', 'no-store').json(await previewFiles(await resolveTemplate((req.body ?? {}) as Record<string, unknown>)))
+    } catch (e) {
+      if (e instanceof AllowlistError) throw new RepoError(e.message, 422)
+      throw e
+    }
+  })
+
+  app.post('/api/templates/apply', async (req, res) => {
+    const b = (req.body ?? {}) as Record<string, unknown>
+    if (typeof b.token !== 'string') throw new RepoError('Body must include the preview token', 400)
+    try {
+      res.json(await applyFiles(await resolveTemplate(b), b.token))
+    } catch (e) {
+      if (e instanceof StaleTokenError) throw new RepoError(e.message, 409)
+      if (e instanceof AllowlistError) throw new RepoError(e.message, 422)
       throw e
     }
   })
