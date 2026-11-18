@@ -43,7 +43,7 @@
 ## M6 — CLAUDE.md linter (done)
 - Conflicts between global and project rules, stale file paths, duplicates, size warnings, suggestion to split into nested CLAUDE.md.
 
-## M7 — Library & templates
+## M7 — Library & templates (done)
 - Every command/agent/skill/hook from all repos; "copy to repo", "make global".
 - Repo templates (a `.claude/` folder + CLAUDE.md) applied with a diff preview.
 - Backup `~/.claude` (minus sessions/secrets) to a private git repo with history.
@@ -59,3 +59,9 @@
 ### M6 notes
 - Heuristics only (plain line parsing, fence-aware; no remark): stale backticked paths, broken `@imports`, repeated lines, always/never contradictions, large files/sections. Findings say "may"; read-only (no auto-fix).
 - Conflict detection only matches same-subject "always X" vs "never/don't X"; paraphrases are missed by design.
+
+### M7 notes
+- Library lists commands (`commands/**/*.md`, namespaced by folder), agents (`agents/*.md`), skills (`skills/<name>/SKILL.md`, skipping the app-managed `skills/synced`) and hooks, from `~/.claude` and every registered repo. Skill layout verified on disk; commands/agents layout follows the Claude Code docs (neither folder exists on the dev machine). Plugin-contributed items are not listed yet.
+- Copy / make global: diff per file → token → backup of anything overwritten. Skills copy as a folder (text files only, max 50 files). Hooks are listed, not copyable (copying one means editing settings.json).
+- Templates are built in (Node service, Learning project); existing files are never overwritten. Deliberately no hook in them: the hook input format for file edits is unverified.
+- Backup is a **local** git repo (`~/.hangar/claude-backup`), written only on "Back up now". settings.json is stored with `env` values and token-like strings masked, so it is for history, not restore. Nothing is pushed anywhere.
