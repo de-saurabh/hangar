@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { homedir } from 'node:os'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import express, { type ErrorRequestHandler, type RequestHandler } from 'express'
 import {
   AddRepoBodySchema,
@@ -10,6 +10,8 @@ import {
   maskSensitiveValues,
   SCOPE_PRECEDENCE,
   buildStuck,
+  isInside,
+  lintMemory,
   buildUsageInsights,
   localDateKey,
   PrefsPatchSchema,
@@ -21,7 +23,7 @@ import {
   type SessionDetail,
 } from '@hangar/shared'
 import { addRepo, loadConfig, removeRepo, RepoError, saveConfig } from './config.js'
-import { read as readMemory } from './sources/claudeMd.js'
+import { read as readMemory, readForLint as readMemoryForLint } from './sources/claudeMd.js'
 import { defaultClaudeJsonPath, read as readMcp } from './sources/mcp.js'
 import { claudeHome, read as readSettings } from './sources/settings.js'
 import { SessionIndex, withRepo } from './sessions.js'
@@ -165,6 +167,22 @@ export function createApp(opts: AppOptions) {
     const repo = repos.find((r) => r.id === req.params.id)
     if (!repo) throw new RepoError('Repo not found', 404)
     res.json(await readMemory({ claudeHome: opts.claudeHome ?? claudeHome(), repoPath: repo.path }))
+  })
+
+  app.get('/api/repos/:id/lint', async (req, res) => {
+    const { repos } = await loadConfig()
+    const repo = repos.find((r) => r.id === req.params.id)
+    if (!repo) throw new RepoError('Repo not found', 404)
+    const files = await readMemoryForLint({ claudeHome: opts.claudeHome ?? claudeHome(), repoPath: repo.path })
+    const findings = lintMemory({
+      files,
+      exists: (p, baseDir) => {
+        const abs = resolve(baseDir, p)
+        // Only look inside the repo: a reference like ../../etc/x is out of scope, not stale.
+        return !isInside(abs, baseDir) || existsSync(abs)
+      },
+    })
+    res.set('Cache-Control', 'no-store').json({ findings, filesChecked: files.length })
   })
 
   app.get('/api/repos/:id/mcp', async (req, res) => {

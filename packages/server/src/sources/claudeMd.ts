@@ -1,7 +1,7 @@
 import { readdir, readFile, stat } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { basename, join, relative, sep } from 'node:path'
-import { estimateTokens, type MemoryFile, type MemoryKind } from '@hangar/shared'
+import { estimateTokens, type LintFile, type MemoryFile, type MemoryKind } from '@hangar/shared'
 
 export interface MemoryContext {
   claudeHome: string
@@ -95,6 +95,21 @@ async function readOne(t: Target): Promise<MemoryFile> {
     if (code === 'ENOENT' || code === 'ENOTDIR') return { ...base, exists: false }
     return { ...base, exists: true, error: `Couldn't read file (${code ?? 'unknown error'})` }
   }
+}
+
+/** Text of every existing CLAUDE.md for linting, with the dir its relative paths resolve against. Never logged. */
+export async function readForLint(ctx: MemoryContext): Promise<LintFile[]> {
+  const out: LintFile[] = []
+  for (const t of await discover(ctx)) {
+    try {
+      const info = await stat(t.path)
+      if (!info.isFile() || info.size > MAX_BYTES) continue
+      out.push({ kind: t.kind, label: t.label, baseDir: ctx.repoPath, text: await readFile(t.path, 'utf8') })
+    } catch {
+      // missing or unreadable: nothing to lint
+    }
+  }
+  return out
 }
 
 export async function read(ctx: MemoryContext): Promise<MemoryFile[]> {
