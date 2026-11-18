@@ -6,6 +6,7 @@ import express, { type ErrorRequestHandler, type RequestHandler } from 'express'
 import { AddRepoBodySchema, effectiveSettings, type HealthResponse, type RepoView } from '@hangar/shared'
 import { addRepo, loadConfig, removeRepo, RepoError } from './config.js'
 import { read as readMemory } from './sources/claudeMd.js'
+import { defaultClaudeJsonPath, read as readMcp } from './sources/mcp.js'
 import { claudeHome, read as readSettings } from './sources/settings.js'
 
 const LOOPBACK_HOST = /^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/i
@@ -91,6 +92,14 @@ export function createApp(opts: AppOptions) {
     const repo = repos.find((r) => r.id === req.params.id)
     if (!repo) throw new RepoError('Repo not found', 404)
     res.json(await readMemory({ claudeHome: opts.claudeHome ?? claudeHome(), repoPath: repo.path }))
+  })
+
+  app.get('/api/repos/:id/mcp', async (req, res) => {
+    const { repos } = await loadConfig()
+    const repo = repos.find((r) => r.id === req.params.id)
+    if (!repo) throw new RepoError('Repo not found', 404)
+    const claudeJsonPath = opts.claudeHome ? join(opts.claudeHome, '.claude.json') : defaultClaudeJsonPath()
+    res.json(await readMcp({ claudeJsonPath, repoPath: repo.path }))
   })
 
   app.use('/api', (_req, res) => {
