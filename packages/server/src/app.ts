@@ -3,7 +3,15 @@ import { stat } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import express, { type ErrorRequestHandler, type RequestHandler } from 'express'
-import { AddRepoBodySchema, effectiveSettings, type HealthResponse, type RepoView } from '@hangar/shared'
+import {
+  AddRepoBodySchema,
+  effectiveSettings,
+  flatten,
+  maskSensitiveValues,
+  SCOPE_PRECEDENCE,
+  type HealthResponse,
+  type RepoView,
+} from '@hangar/shared'
 import { addRepo, loadConfig, removeRepo, RepoError } from './config.js'
 import { read as readMemory } from './sources/claudeMd.js'
 import { defaultClaudeJsonPath, read as readMcp } from './sources/mcp.js'
@@ -84,7 +92,24 @@ export function createApp(opts: AppOptions) {
     const repo = repos.find((r) => r.id === req.params.id)
     if (!repo) throw new RepoError('Repo not found', 404)
     const layers = await readSettings({ claudeHome: opts.claudeHome ?? claudeHome(), repoPath: repo.path })
-    res.json(effectiveSettings(layers))
+    const eff = effectiveSettings(layers)
+    // Secret-looking values never leave the server unless explicitly revealed below.
+    res.json({ ...eff, values: maskSensitiveValues(eff.values) })
+  })
+
+  /** Explicit "Reveal" for one masked value. Only ever called by a user click. */
+  app.get('/api/repos/:id/settings/value', async (req, res) => {
+    const key = typeof req.query.key === 'string' ? req.query.key : ''
+    const scope = SCOPE_PRECEDENCE.find((s) => s === req.query.scope)
+    if (!key || !scope) throw new RepoError('Query must include key and a valid scope', 400)
+    const { repos } = await loadConfig()
+    const repo = repos.find((r) => r.id === req.params.id)
+    if (!repo) throw new RepoError('Repo not found', 404)
+    const layers = await readSettings({ claudeHome: opts.claudeHome ?? claudeHome(), repoPath: repo.path })
+    const data = layers.find((l) => l.scope === scope)?.data
+    const flat = data ? flatten(data) : undefined
+    if (!flat?.has(key)) throw new RepoError('Setting not found', 404)
+    res.set('Cache-Control', 'no-store').json({ value: flat.get(key) })
   })
 
   app.get('/api/repos/:id/memory', async (req, res) => {

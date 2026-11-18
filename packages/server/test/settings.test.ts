@@ -90,3 +90,53 @@ describe('hooks via the settings adapter', () => {
     expect(eff.hooks.find((h) => h.event === 'Stop')?.sources).toEqual(['project', 'user'])
   })
 })
+
+describe('secret masking over the API', () => {
+  let home: string
+  let server: Server
+  let base: string
+  let repoId: string
+
+  beforeEach(async () => {
+    home = await mkdtemp(join(tmpdir(), 'hangar-home-'))
+    process.env.HANGAR_HOME = home
+    server = createApp({ version: 'test', claudeHome }).listen(0, '127.0.0.1')
+    await new Promise((r) => server.once('listening', r))
+    base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
+    const add = await fetch(`${base}/api/repos`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ path: join(FIXTURES, 'repo-demo') }),
+    })
+    repoId = ((await add.json()) as { id: string }).id
+  })
+  afterEach(async () => {
+    await new Promise((r) => server.close(r))
+    delete process.env.HANGAR_HOME
+    await rm(home, { recursive: true, force: true })
+  })
+
+  it('never includes secret values in the settings response', async () => {
+    const text = await (await fetch(`${base}/api/repos/${repoId}/settings`)).text()
+    expect(text).not.toContain('FIXTURE-SETTINGS-SECRET')
+    const apiKey = (JSON.parse(text) as { values: { key: string; masked?: boolean }[] }).values.find((v) => v.key === 'env.API_KEY')
+    expect(apiKey?.masked).toBe(true)
+  })
+
+  it('reveals one value only on explicit request, uncached', async () => {
+    const res = await fetch(`${base}/api/repos/${repoId}/settings/value?key=env.API_KEY&scope=user`)
+    expect(res.status).toBe(200)
+    expect(res.headers.get('cache-control')).toBe('no-store')
+    expect(await res.json()).toEqual({ value: 'FIXTURE-SETTINGS-SECRET' })
+  })
+
+  it('validates the reveal request', async () => {
+    const get = (q: string) => fetch(`${base}/api/repos/${repoId}/settings/value?${q}`)
+    expect((await get('key=env.API_KEY')).status).toBe(400) // no scope
+    expect((await get('scope=user')).status).toBe(400) // no key
+    expect((await get('key=env.API_KEY&scope=bogus')).status).toBe(400)
+    expect((await get('key=env.NOPE&scope=user')).status).toBe(404)
+    expect((await get('key=env.API_KEY&scope=project')).status).toBe(404) // not set at that level
+    expect((await fetch(`${base}/api/repos/nope/settings/value?key=a&scope=user`)).status).toBe(404)
+  })
+})
