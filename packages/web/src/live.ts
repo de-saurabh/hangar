@@ -58,6 +58,7 @@ export function useLiveFeed(): void {
     es.addEventListener('transition', (e) => {
       const t = JSON.parse((e as MessageEvent<string>).data) as Transition
       void qc.invalidateQueries({ queryKey: ['sessions'] })
+      void qc.invalidateQueries({ queryKey: ['dashboard'] })
       if (t.to === 'waiting' && notifyEnabled()) {
         // One alert per session per 30 s, so a burst of prompts is not a burst of toasts.
         const last = alerted.current.get(t.sessionId) ?? 0
