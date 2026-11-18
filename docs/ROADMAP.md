@@ -34,7 +34,7 @@
 - **Tasks are unverified against real data:** no TodoWrite/TaskCreate appears in the surveyed transcripts, so the shapes are tolerant guesses. Confirm when a real session uses them.
 - Not done: Hangar-snapshot fallback for CLAUDE.md changes in non-git repos, per-day token/cost accounting (today's numbers are per session active today), budget line from the mockup.
 
-## M5 — Insights
+## M5 — Insights (done)
 - Cost/tokens per day, per repo, per model; daily budget alert.
 - Allowlist suggestions (commands approved by hand often) — clicking writes the rule after showing a diff.
 - "Where Claude got stuck" (repeated failures, high context, failing MCP).
@@ -50,3 +50,8 @@
 
 ## M8 — Polish
 - MCP health checks, secrets scan view, keyboard shortcuts (⌘K search), light theme, README with GIF.
+
+### M5 notes
+- Cost per day is an **estimate**: transcripts have no per-day cost, so a session's reported total is spread over its messages by relative token price; running sessions use the same model's observed rate.
+- Allowlist suggestions need hooks enabled (PermissionRequest followed by the same call's PostToolUse = approved by hand). **Unverified with a real session.** Counters live in `~/.hangar/approvals.json` (rule + cwd only). Repo rules are written to `.claude/settings.local.json`, global to `~/.claude/settings.json`, always diff → token → backup.
+- Weekly "shipped" is deterministic (session titles + git subjects), no LLM.
