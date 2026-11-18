@@ -245,3 +245,36 @@ describe('task lists', () => {
     expect(s.tasks).toEqual([])
   })
 })
+
+describe('failure tracking', () => {
+  const fail = (id: string, n: number) => toolResult(id, n, { isError: true, text: 'boom' })
+
+  it('groups failures by tool and command prefix, without keeping events', () => {
+    const s = run(
+      [
+        toolUse('a', 'Bash', { command: 'npm test -- orders' }, 1),
+        fail('a', 2),
+        toolUse('b', 'Bash', { command: 'CI=1 npm test --silent' }, 3), // leading env assignment is ignored
+        fail('b', 4),
+        toolUse('c', 'Bash', { command: 'ls' }, 5),
+        toolResult('c', 6), // succeeded: not counted
+        toolUse('d', 'mcp__linear__get_issue', {}, 7),
+        fail('d', 8),
+        toolUse('e', 'Read', { file_path: 'x' }, 9),
+        fail('e', 10),
+      ],
+      false,
+    )
+    expect(summarize(s).failures).toEqual([
+      { key: 'BASH npm test', count: 2 },
+      { key: 'MCP linear', count: 1 },
+      { key: 'READ', count: 1 },
+    ])
+  })
+
+  it('never puts secrets into failure keys, and ignores results with unknown tool ids', () => {
+    const s = run([toolUse('a', 'Bash', { command: 'API_TOKEN=abcdef123456 deploy --prod' }, 1), fail('a', 2), fail('ghost', 3)], false)
+    expect(JSON.stringify(summarize(s).failures)).not.toContain('abcdef123456')
+    expect(summarize(s).failures).toEqual([{ key: 'BASH deploy --prod', count: 1 }])
+  })
+})

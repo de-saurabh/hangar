@@ -73,6 +73,8 @@ export interface SessionSummary {
   contextWindow?: number
   compactions: number
   tasks: TaskCounts
+  /** Failed tool calls grouped by tool/command (top 10). */
+  failures: { key: string; count: number }[]
   linesAdded?: number
   linesRemoved?: number
   version?: string
@@ -114,6 +116,10 @@ export interface SessionState {
   /** Current task list. Unverified formats: see docs/DATA-SOURCES.md. */
   tasks: TaskItem[]
   taskByToolUse: Map<string, TaskItem>
+  /** tool_use id -> failure key, until its result arrives. */
+  pendingTools: Map<string, string>
+  /** Failure counts by key, e.g. "BASH npm test" or "MCP github". */
+  failures: Map<string, number>
 }
 
 interface Usage {
@@ -150,6 +156,8 @@ export function createSessionState(id: string, opts: { keepEvents?: boolean } = 
     searchChars: 0,
     tasks: [],
     taskByToolUse: new Map(),
+    pendingTools: new Map(),
+    failures: new Map(),
   }
 }
 
@@ -257,6 +265,18 @@ function recordFile(s: SessionState, path: string, added: number, removed: numbe
   s.files.set(path, f)
 }
 
+/** Groups failures: "BASH npm test", "MCP github", "READ". Redacted; commands reduced to their first two words. */
+function failureKey(name: string, input: Obj): string {
+  const label = toolLabel(name)
+  if (name === 'Bash' || name === 'PowerShell') {
+    const cmd = (str(input.command) ?? '').replace(/^(\s*[A-Za-z_][A-Za-z0-9_]*=\S*\s+)+/, '')
+    const words = redactText(cmd).trim().split(/\s+/).slice(0, 2).join(' ')
+    return words ? `${label} ${truncate(words, 40)}` : label
+  }
+  if (name.startsWith('mcp__')) return `MCP ${name.split('__')[1] ?? ''}`.trim()
+  return label
+}
+
 const MAX_TASKS = 200
 
 function normStatus(v: unknown): TaskStatus | 'deleted' {
@@ -316,7 +336,10 @@ function applyToolResults(s: SessionState, raw: Obj, ts: string): void {
       const newId = created && isObj(rt) ? (isObj(rt.task) ? str(rt.task.id) : str(rt.taskId) ?? str(rt.id)) : undefined
       if (created && newId) created.id = newId
       const idx = s.toolEvent.get(str(b.tool_use_id) ?? '')
+      const failedKey = s.pendingTools.get(str(b.tool_use_id) ?? '')
+      s.pendingTools.delete(str(b.tool_use_id) ?? '')
       if (b.is_error === true) {
+        if (failedKey) s.failures.set(failedKey, (s.failures.get(failedKey) ?? 0) + 1)
         const ev = idx !== undefined ? s.events[idx] : undefined
         const note = clean(textOf(b.content), NOTE_MAX)
         if (ev) {
@@ -408,6 +431,7 @@ function applyAssistant(s: SessionState, raw: Obj, ts: string): void {
       const toolUseId = str(b.id)
       if (toolUseId && idx >= 0) s.toolEvent.set(toolUseId, idx)
       applyTaskTool(s, name, input, toolUseId)
+      if (toolUseId && s.pendingTools.size < 500) s.pendingTools.set(toolUseId, failureKey(name, input))
     }
   }
 }
@@ -524,6 +548,7 @@ export function summarize(s: SessionState): SessionSummary {
       ? { contextTokens: s.contextTokens, contextWindow: s.maxObservedTokens > 200_000 ? 1_000_000 : 200_000 }
       : {}),
     compactions: s.compactions,
+    failures: [...s.failures.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([key, count]) => ({ key, count })),
     tasks: {
       open: s.tasks.filter((t) => t.status !== 'completed').length,
       inProgress: s.tasks.filter((t) => t.status === 'in_progress').length,
