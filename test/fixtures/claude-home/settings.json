@@ -9,5 +9,8 @@
     "deny": ["Read(.env*)"]
   },
   "env": { "NODE_ENV": "production" },
+  "hooks": {
+    "Stop": [{ "hooks": [{ "type": "command", "command": "notify-send \"Claude finished\"" }] }]
+  },
   "someFutureKey": { "nested": true },
 }

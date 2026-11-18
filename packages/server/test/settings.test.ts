@@ -78,3 +78,15 @@ describe('GET /api/repos/:id/settings', () => {
     expect((await fetch(`${base}/api/repos/nope/settings`)).status).toBe(404)
   })
 })
+
+describe('hooks via the settings adapter', () => {
+  it('merges hooks from user and project, collapsing the identical Stop hook', async () => {
+    const eff = effectiveSettings(await read({ claudeHome, repoPath: join(FIXTURES, 'repo-demo') }))
+    expect(eff.hooks.map((h) => `${h.event}${h.matcher ? ' · ' + h.matcher : ''}`).sort()).toEqual([
+      'PostToolUse · Edit',
+      'PreToolUse · Bash',
+      'Stop',
+    ])
+    expect(eff.hooks.find((h) => h.event === 'Stop')?.sources).toEqual(['project', 'user'])
+  })
+})

@@ -1,5 +1,10 @@
 {
   "model": "opus",
   "permissions": { "allow": ["Bash(npm test:*)", "Edit(src/**)"] },
-  "env": { "NODE_ENV": "development" }
+  "env": { "NODE_ENV": "development" },
+  "hooks": {
+    "PostToolUse": [{ "matcher": "Edit", "hooks": [{ "type": "command", "command": "npx prettier --write $FILE" }] }],
+    "PreToolUse": [{ "matcher": "Bash", "hooks": [{ "type": "command", "command": "./scripts/block-prod-db.sh" }] }],
+    "Stop": [{ "hooks": [{ "type": "command", "command": "notify-send \"Claude finished\"" }] }]
+  }
 }
