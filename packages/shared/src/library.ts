@@ -60,6 +60,19 @@ export function firstLine(text: string): string {
   return ''
 }
 
+export interface TemplateInfo {
+  id: string
+  name: string
+  summary: string
+}
+
+export interface BackupInfo {
+  exists: boolean
+  versions: number
+  lastAt?: string
+  history: { commit: string; date: string; subject: string }[]
+}
+
 /** Preview of a multi-file write, as sent to the browser. */
 export interface FilesPreviewView {
   files: { path: string; status: 'new' | 'changed' | 'same'; diff: string }[]

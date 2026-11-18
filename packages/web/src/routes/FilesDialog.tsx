@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { FilesPreviewView } from '@hangar/shared'
 import { DiffView } from './HooksSetup'
 
-const STATUS: Record<string, string> = { new: 'New file', changed: 'Overwrites', same: 'Identical, skipped' }
+const STATUS: Record<string, string> = { new: 'New file', changed: 'Overwrites', same: 'No change' }
 
 /**
  * Diff-then-confirm for any multi-file write. Nothing is written until the

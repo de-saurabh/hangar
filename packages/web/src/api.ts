@@ -1,4 +1,4 @@
-import type { FilesPreviewView, LibraryResponse, InsightsSummary, LintFinding, Suggestion, UsageInsightsResponse, ApiError, Dashboard, Prefs, InstallPreview, LiveState, EffectiveSettings, HealthResponse, McpResult, MemoryFile, Repo, RepoView, SessionDetail, SessionListItem } from '@hangar/shared'
+import type { BackupInfo, TemplateInfo, FilesPreviewView, LibraryResponse, InsightsSummary, LintFinding, Suggestion, UsageInsightsResponse, ApiError, Dashboard, Prefs, InstallPreview, LiveState, EffectiveSettings, HealthResponse, McpResult, MemoryFile, Repo, RepoView, SessionDetail, SessionListItem } from '@hangar/shared'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
@@ -10,6 +10,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(body?.error ?? `Request failed (${res.status})`)
   }
   return res.status === 204 ? (undefined as T) : ((await res.json()) as T)
+}
+
+export interface TemplateBody {
+  templateId: string
+  repoId: string
 }
 
 export interface CopyBody {
@@ -46,6 +51,11 @@ export const api = {
   library: () => request<LibraryResponse>('/api/library'),
   copyPreview: (b: CopyBody) => request<FilesPreviewView>('/api/library/copy/preview', { method: 'POST', body: JSON.stringify(b) }),
   copyApply: (b: CopyBody & { token: string }) => request<{ written: number; backupPaths: string[] }>('/api/library/copy/apply', { method: 'POST', body: JSON.stringify(b) }),
+  templates: () => request<{ templates: TemplateInfo[] }>('/api/templates'),
+  templatePreview: (b: TemplateBody) => request<FilesPreviewView>('/api/templates/preview', { method: 'POST', body: JSON.stringify(b) }),
+  templateApply: (b: TemplateBody & { token: string }) => request<{ written: number; backupPaths: string[] }>('/api/templates/apply', { method: 'POST', body: JSON.stringify(b) }),
+  backup: () => request<BackupInfo>('/api/backup'),
+  runBackup: () => request<{ changed: boolean; files: number }>('/api/backup/run', { method: 'POST' }),
   usage: (days = 14) => request<UsageInsightsResponse>(`/api/insights/usage?days=${days}`),
   insightsSummary: () => request<InsightsSummary>('/api/insights/summary'),
   allowlist: () => request<{ suggestions: Suggestion[] }>('/api/insights/allowlist'),

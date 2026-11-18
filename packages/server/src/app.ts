@@ -33,6 +33,7 @@ import { discoverFiles, discoverHooks, publicItem } from './sources/library.js'
 import { CopyError, planCopy, type CopyTarget } from './libraryCopy.js'
 import { applyFiles, previewFiles } from './settingsWrite.js'
 import { planTemplate, TEMPLATES } from './templates.js'
+import { runBackup, status as backupStatus } from './backup.js'
 import { ApprovalTracker } from './approvals.js'
 import { AllowlistError, applyAdd, isAllowed, previewAdd, targetPath, type AllowTarget } from './allowlist.js'
 import { recentCommits } from './sources/gitHistory.js'
@@ -350,6 +351,19 @@ export function createApp(opts: AppOptions) {
       if (e instanceof StaleTokenError) throw new RepoError(e.message, 409)
       if (e instanceof AllowlistError) throw new RepoError(e.message, 422)
       throw e
+    }
+  })
+
+  app.get('/api/backup', async (_req, res) => {
+    res.set('Cache-Control', 'no-store').json(await backupStatus())
+  })
+
+  /** Explicit click only. Writes inside ~/.hangar/claude-backup, never to ~/.claude. */
+  app.post('/api/backup/run', async (_req, res) => {
+    try {
+      res.json(await runBackup(opts.claudeHome ?? claudeHome()))
+    } catch (e) {
+      throw new RepoError(`Backup failed${e instanceof Error && 'code' in e && e.code === 'ENOENT' ? ': git is not installed or not on PATH' : ''}.`, 422)
     }
   })
 

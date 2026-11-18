@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { LIBRARY_KINDS, type LibraryItem, type LibraryKind } from '@hangar/shared'
 import { api, type CopyBody } from '../api'
 import { FilesDialog } from './FilesDialog'
+import { LibraryAside } from './LibraryAside'
 
 const LABEL: Record<LibraryKind, string> = { commands: 'Commands', agents: 'Agents', skills: 'Skills', hooks: 'Hooks' }
 const card = 'flex flex-col gap-3 rounded-[14px] border border-border bg-surface p-4'
@@ -54,11 +55,14 @@ export function LibraryPage() {
       {data && items.length === 0 && (
         <p className="text-sm text-muted">{needle ? 'Nothing matches.' : `No ${LABEL[kind].toLowerCase()} found in ~/.claude or your repos.`}</p>
       )}
-      <section className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3">
-        {items.map((i) => (
-          <ItemCard key={i.id} item={i} />
-        ))}
-      </section>
+      <div className="flex flex-wrap items-start gap-5">
+        <section className="grid min-w-0 flex-[999_1_560px] grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3">
+          {items.map((i) => (
+            <ItemCard key={i.id} item={i} />
+          ))}
+        </section>
+        <LibraryAside />
+      </div>
     </div>
   )
 }
