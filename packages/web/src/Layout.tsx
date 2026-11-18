@@ -1,80 +1,23 @@
-import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
-import { Link, Outlet } from '@tanstack/react-router'
-import { api } from './api'
+import { Outlet, useRouterState } from '@tanstack/react-router'
 import { CommandPalette } from './CommandPalette'
 import { useLiveFeed } from './live'
-import { getTheme, NEXT, setTheme } from './theme'
+import { Header } from './shell/Header'
+import { ScopeStrip } from './shell/ScopeStrip'
 
-const navLink = 'rounded-lg px-3 py-2 text-sm text-muted no-underline hover:text-text'
-const navActive = { className: 'rounded-lg bg-hover px-3 py-2 text-sm font-semibold text-text no-underline' }
+/** Insights covers every repo at once, so the scope strip is hidden there. */
+const UNSCOPED = ['/insights']
 
 export function Layout() {
   useLiveFeed()
+  const path = useRouterState({ select: (s) => s.location.pathname })
   return (
     <div className="min-h-screen">
       <CommandPalette />
-      <header className="flex flex-wrap items-center gap-x-7 gap-y-3 border-b border-border bg-surface-2 px-7 py-3">
-        <span className="flex items-center gap-2.5 text-lg font-bold">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent" aria-hidden="true">
-            <path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />
-          </svg>
-          Hangar
-        </span>
-        <nav aria-label="Main" className="flex gap-1">
-          <Link to="/" className={navLink} activeProps={navActive} activeOptions={{ exact: true }}>
-            Dashboard
-          </Link>
-          <Link to="/sessions" className={navLink} activeProps={navActive}>
-            Sessions
-          </Link>
-          <Link to="/insights" className={navLink} activeProps={navActive}>
-            Insights
-          </Link>
-          <Link to="/library" className={navLink} activeProps={navActive}>
-            Library
-          </Link>
-          <Link to="/config" className={navLink} activeProps={navActive}>
-            Config
-          </Link>
-        </nav>
-        <HealthBadge />
-        <ThemeToggle />
-      </header>
-      <main className="mx-auto max-w-6xl px-7 pb-12 pt-6">
+      <Header />
+      {!UNSCOPED.some((p) => path.startsWith(p)) && <ScopeStrip />}
+      <main className="px-7 pb-20 pt-6">
         <Outlet />
       </main>
     </div>
-  )
-}
-
-function ThemeToggle() {
-  const [choice, setChoice] = useState(getTheme)
-  const label = { system: 'Auto', light: 'Light', dark: 'Dark' }[choice]
-  return (
-    <button
-      type="button"
-      aria-label={`Theme: ${label}. Click to change.`}
-      title="Theme"
-      onClick={() => {
-        const next = NEXT[choice]
-        setTheme(next)
-        setChoice(next)
-      }}
-      className="min-h-8 cursor-pointer rounded-lg border border-border bg-transparent px-2.5 text-xs font-semibold text-muted"
-    >
-      {label}
-    </button>
-  )
-}
-
-function HealthBadge() {
-  const { data, isError } = useQuery({ queryKey: ['health'], queryFn: api.health })
-  if (isError) return <span className="ml-auto text-sm text-error">Server unreachable</span>
-  if (!data) return null
-  return (
-    <span className="ml-auto text-sm text-muted">
-      v{data.version} · {data.claudeHomeFound ? '~/.claude found' : '~/.claude not found'}
-    </span>
   )
 }

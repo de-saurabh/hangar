@@ -4,6 +4,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { api } from './api'
 import { PAGES, rank, type PaletteItem } from './palette'
 
+const OPEN_EVENT = 'hangar:open-palette'
+
+/** Open the palette from anywhere (the header's search button). */
+export const openPalette = () => window.dispatchEvent(new Event(OPEN_EVENT))
+
 /** ⌘K / Ctrl+K: jump to a page, a repo's config or a session. */
 export function CommandPalette() {
   const [open, setOpen] = useState(false)
@@ -14,8 +19,13 @@ export function CommandPalette() {
         setOpen((o) => !o)
       }
     }
+    const onOpen = () => setOpen(true)
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    window.addEventListener(OPEN_EVENT, onOpen)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener(OPEN_EVENT, onOpen)
+    }
   }, [])
   return open ? <Palette onClose={() => setOpen(false)} /> : null
 }

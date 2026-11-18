@@ -1,13 +1,12 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import type { LiveState, SessionListItem } from '@hangar/shared'
 import { api } from '../api'
 import { COLUMNS, groupByColumn } from '../board'
 import { formatCost, formatDuration, shortModel } from '../format'
-import { notifyEnabled, setNotify, useLive } from '../live'
+import { useLive } from '../live'
 import { timeAgo } from '../time'
-import { HooksSetup } from './HooksSetup'
 
 const chip = 'min-h-10 rounded-full border px-3.5 text-[13px] font-semibold cursor-pointer'
 const chipOn = `${chip} border-accent bg-selected text-text`
@@ -48,10 +47,8 @@ export function SessionsPage() {
             {needYou > 0 ? <span className="font-semibold text-waiting">{needYou} need{needYou === 1 ? 's' : ''} you.</span> : 'Nothing is waiting for you.'}
           </span>
         </div>
-        <NotifyToggle />
       </div>
 
-      <HooksSetup />
 
       <input
         type="search"
@@ -120,53 +117,6 @@ export function SessionsPage() {
 
 function Grid({ children }: { children: React.ReactNode }) {
   return <div className="grid items-start gap-4 [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))]">{children}</div>
-}
-
-function Toggle({ on, onClick, label }: { on: boolean; onClick: () => void; label: string }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={on}
-      className="inline-flex min-h-11 cursor-pointer items-center gap-2.5 rounded-[10px] border border-border bg-surface px-3.5 text-sm font-semibold text-text"
-    >
-      <span className={`relative h-5 w-9 rounded-full ${on ? 'bg-accent' : 'bg-track'}`}>
-        <span className={`absolute top-0.5 size-4 rounded-full bg-bg ${on ? 'left-[18px]' : 'left-0.5'}`} />
-      </span>
-      {label}
-    </button>
-  )
-}
-
-function NotifyToggle() {
-  const qc = useQueryClient()
-  const { data: prefs } = useQuery({ queryKey: ['prefs'], queryFn: api.prefs })
-  const setDesktop = useMutation({
-    mutationFn: (on: boolean) => api.setPrefs({ desktopAlerts: on }),
-    onSuccess: (p) => qc.setQueryData(['prefs'], p),
-  })
-  return (
-    <div className="flex flex-col items-end gap-2">
-      <Toggle on={prefs?.desktopAlerts ?? false} onClick={() => setDesktop.mutate(!prefs?.desktopAlerts)} label="Desktop alert when a session needs me" />
-      <BrowserToggle />
-    </div>
-  )
-}
-
-function BrowserToggle() {
-  const [on, setOn] = useState(notifyEnabled)
-  const [blocked, setBlocked] = useState(false)
-  const toggle = async () => {
-    const next = await setNotify(!on)
-    setOn(next)
-    setBlocked(!on && !next)
-  }
-  return (
-    <div className="flex flex-col items-end gap-1">
-      <Toggle on={on} onClick={toggle} label="Browser alert while this tab is open" />
-      {blocked && <span className="text-xs text-waiting">The browser blocked notifications. Allow them for this site, then try again.</span>}
-    </div>
-  )
 }
 
 export function ContextBar({ s }: { s: Pick<SessionListItem, 'contextTokens' | 'contextWindow'> }) {
