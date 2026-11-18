@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { effectiveSettings, flatten, valuesForScope, type SettingsLayer } from '../src/index'
+import { effectiveSettings, flatten, MASK, maskSensitiveValues, valuesForScope, type SettingsLayer } from '../src/index'
 
 const layer = (scope: SettingsLayer['scope'], data?: Record<string, unknown>): SettingsLayer => ({
   scope,
@@ -84,5 +84,36 @@ describe('valuesForScope', () => {
 
   it('is empty for a layer that sets nothing', () => {
     expect(valuesForScope(eff.values, 'local')).toEqual([])
+  })
+})
+
+describe('maskSensitiveValues', () => {
+  const token = 'ghp_' + 'Ab1'.repeat(12)
+  const eff = effectiveSettings([
+    layer('user', { env: { API_KEY: 'user-secret-value', NODE_ENV: 'production' }, model: 'sonnet' }),
+    layer('project', { env: { API_KEY: 'project-secret-value', NODE_ENV: 'development' }, other: token }),
+  ])
+
+  it('masks the winning value and the overridden ones, keeping keys and sources', () => {
+    const masked = maskSensitiveValues(eff.values)
+    const key = masked.find((v) => v.key === 'env.API_KEY')
+    expect(key).toMatchObject({ value: MASK, masked: true, source: 'project' })
+    expect(key?.overrides).toEqual([{ source: 'user', value: MASK, masked: true }])
+    expect(JSON.stringify(masked)).not.toContain('secret-value')
+    expect(JSON.stringify(masked)).not.toContain(token)
+  })
+
+  it('leaves ordinary values untouched and does not mutate its input', () => {
+    const before = JSON.stringify(eff.values)
+    const masked = maskSensitiveValues(eff.values)
+    expect(masked.find((v) => v.key === 'env.NODE_ENV')).toMatchObject({ value: 'development' })
+    expect(masked.find((v) => v.key === 'env.NODE_ENV')?.masked).toBeUndefined()
+    expect(JSON.stringify(eff.values)).toBe(before)
+  })
+
+  it('carries the mask through the per-scope view', () => {
+    const masked = maskSensitiveValues(eff.values)
+    expect(valuesForScope(masked, 'user').find((r) => r.key === 'env.API_KEY')).toEqual({ key: 'env.API_KEY', value: MASK, masked: true, overriddenBy: 'project' })
+    expect(valuesForScope(masked, 'project').find((r) => r.key === 'other')).toMatchObject({ masked: true })
   })
 })

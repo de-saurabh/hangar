@@ -1,4 +1,5 @@
 import { hooksFromLayers, type HookEntry } from './hooks'
+import { isSensitiveSetting, MASK } from './redact'
 
 /**
  * Settings model + pure "effective config" merge. No I/O here: the server
@@ -23,10 +24,12 @@ export interface SettingsLayer extends LayerInfo {
 
 export interface SettingValue {
   key: string
+  /** Replaced by a mask when `masked` is true; fetch the real value only on request. */
   value: unknown
+  masked?: true
   source: SettingScope
   /** Lower-precedence layers that also set this key (and lost). */
-  overrides: { source: SettingScope; value: unknown }[]
+  overrides: { source: SettingScope; value: unknown; masked?: true }[]
 }
 
 export type PermissionKind = 'allow' | 'deny' | 'ask'
@@ -69,9 +72,22 @@ export function flatten(obj: Record<string, unknown>, prefix = ''): Map<string, 
 
 const rank = (s: SettingScope) => SCOPE_PRECEDENCE.indexOf(s)
 
+/**
+ * Hide sensitive values (secret-looking env vars, token-shaped values) so they
+ * never leave the server by default. Returns new objects; input is untouched.
+ */
+export function maskSensitiveValues(values: SettingValue[]): SettingValue[] {
+  return values.map((v) => ({
+    ...v,
+    ...(isSensitiveSetting(v.key, v.value) ? { value: MASK, masked: true as const } : {}),
+    overrides: v.overrides.map((o) => (isSensitiveSetting(v.key, o.value) ? { source: o.source, value: MASK, masked: true as const } : o)),
+  }))
+}
+
 export interface ScopeValue {
   key: string
   value: unknown
+  masked?: true
   /** Set when a higher-precedence layer wins this key, so this layer's value is inactive. */
   overriddenBy?: SettingScope
 }
@@ -81,10 +97,10 @@ export function valuesForScope(values: SettingValue[], scope: SettingScope): Sco
   const out: ScopeValue[] = []
   for (const v of values) {
     if (v.source === scope) {
-      out.push({ key: v.key, value: v.value })
+      out.push({ key: v.key, value: v.value, ...(v.masked ? { masked: true as const } : {}) })
     } else {
       const lost = v.overrides.find((o) => o.source === scope)
-      if (lost) out.push({ key: v.key, value: lost.value, overriddenBy: v.source })
+      if (lost) out.push({ key: v.key, value: lost.value, ...(lost.masked ? { masked: true as const } : {}), overriddenBy: v.source })
     }
   }
   return out

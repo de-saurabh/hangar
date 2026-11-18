@@ -84,6 +84,21 @@ describe('hooksFromLayers', () => {
   })
 })
 
+describe('hook secret redaction', () => {
+  it('scrubs tokens and secret assignments from command summaries', () => {
+    const token = 'ghp_' + 'Ab1'.repeat(12)
+    const hooks = hooksFromLayers(
+      [layer('user', { hooks: { Stop: [{ hooks: [{ type: 'command', command: `API_TOKEN=abcdef123456 curl -H "Authorization: Bearer ${'z'.repeat(24)}" ${token}` }] }] } })],
+      SCOPE_PRECEDENCE,
+    )
+    const summary = hooks[0]?.summary ?? ''
+    expect(summary).not.toContain('abcdef123456')
+    expect(summary).not.toContain('z'.repeat(24))
+    expect(summary).not.toContain(token)
+    expect(summary).toContain('curl')
+  })
+})
+
 describe('redact helpers', () => {
   it('safeUrl drops credentials, query and fragment', () => {
     expect(safeUrl('https://u:p@host.example:8080/a/b?x=1#f')).toBe('https://host.example:8080/a/b')

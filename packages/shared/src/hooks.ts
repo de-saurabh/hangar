@@ -1,4 +1,4 @@
-import { safeUrl, truncate } from './redact'
+import { redactText, safeUrl, truncate } from './redact'
 import type { SettingScope, SettingsLayer } from './settings'
 
 /**
@@ -25,13 +25,13 @@ function summarize(handler: Record<string, unknown>, type: string): string {
   switch (type) {
     case 'command': {
       const args = Array.isArray(handler.args) ? handler.args.filter((a) => typeof a === 'string').join(' ') : ''
-      return truncate([str('command'), args].filter(Boolean).join(' '), 300)
+      return truncate(redactText([str('command'), args].filter(Boolean).join(' ')), 300)
     }
     case 'http':
       return safeUrl(str('url') ?? '')
     case 'prompt':
     case 'agent':
-      return truncate(str('prompt') ?? str('agent') ?? type, 120)
+      return truncate(redactText(str('prompt') ?? str('agent') ?? type), 120)
     default:
       return type // unknown handler types (e.g. mcp_tool, future ones): show the type, nothing else
   }
