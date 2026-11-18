@@ -59,3 +59,10 @@ export function firstLine(text: string): string {
   }
   return ''
 }
+
+/** Preview of a multi-file write, as sent to the browser. */
+export interface FilesPreviewView {
+  files: { path: string; status: 'new' | 'changed' | 'same'; diff: string }[]
+  /** Send back with the apply call to confirm you saw this diff. */
+  token: string
+}

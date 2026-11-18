@@ -1,7 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { LIBRARY_KINDS, type LibraryItem, type LibraryKind } from '@hangar/shared'
-import { api } from '../api'
+import { api, type CopyBody } from '../api'
+import { FilesDialog } from './FilesDialog'
 
 const LABEL: Record<LibraryKind, string> = { commands: 'Commands', agents: 'Agents', skills: 'Skills', hooks: 'Hooks' }
 const card = 'flex flex-col gap-3 rounded-[14px] border border-border bg-surface p-4'
@@ -63,6 +64,11 @@ export function LibraryPage() {
 }
 
 function ItemCard({ item }: { item: LibraryItem }) {
+  const qc = useQueryClient()
+  const { data: repos } = useQuery({ queryKey: ['repos'], queryFn: api.repos })
+  const [picking, setPicking] = useState(false)
+  const [copy, setCopy] = useState<CopyBody>()
+  const targets = (repos ?? []).filter((r) => item.scope === 'user' || r.id !== item.repoId)
   return (
     <div className={card}>
       <span className="break-all font-mono text-[15px] font-semibold">{item.kind === 'commands' ? `/${item.name}` : item.name}</span>
@@ -71,6 +77,54 @@ function ItemCard({ item }: { item: LibraryItem }) {
         {item.scope === 'user' ? 'Global (~/.claude)' : `In ${item.repoName}`} · {item.path}
         {item.detail ? ` · ${item.detail}` : ''}
       </span>
+      {item.copyable && (
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          {picking ? (
+            <select
+              autoFocus
+              aria-label="Copy to which repo?"
+              defaultValue=""
+              onChange={(e) => {
+                setPicking(false)
+                if (e.target.value) setCopy({ itemId: item.id, scope: 'repo', repoId: e.target.value })
+              }}
+              onBlur={() => setPicking(false)}
+              className="min-h-9 rounded-lg border border-border bg-surface-2 px-2 text-sm text-text"
+            >
+              <option value="" disabled>
+                Choose a repo…
+              </option>
+              {targets.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <button type="button" disabled={targets.length === 0} onClick={() => setPicking(true)} className="min-h-9 cursor-pointer rounded-lg border border-border bg-[#1E222B] px-3 text-[13px] font-semibold text-text disabled:opacity-50">
+              Copy to repo…
+            </button>
+          )}
+          {item.scope === 'repo' && (
+            <button type="button" onClick={() => setCopy({ itemId: item.id, scope: 'global' })} className="min-h-9 cursor-pointer rounded-lg border border-border bg-transparent px-3 text-[13px] font-semibold text-muted">
+              Make global
+            </button>
+          )}
+        </div>
+      )}
+      {copy && (
+        <FilesDialog
+          title={copy.scope === 'global' ? `Make ${item.name} global` : `Copy ${item.name} to ${repos?.find((r) => r.id === copy.repoId)?.name ?? 'repo'}`}
+          intro={copy.scope === 'global' ? 'Copies into ~/.claude so every repo can use it. The original stays where it is.' : "Copies into the repo's .claude folder. The original stays where it is."}
+          load={() => api.copyPreview(copy)}
+          apply={(token) => api.copyApply({ ...copy, token })}
+          confirmLabel="Copy"
+          onClose={(changed) => {
+            setCopy(undefined)
+            if (changed) void qc.invalidateQueries({ queryKey: ['library'] })
+          }}
+        />
+      )}
     </div>
   )
 }
