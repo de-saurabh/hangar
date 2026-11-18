@@ -89,12 +89,14 @@ export interface SessionState {
   models: Set<string>
   /** Latest usage per assistant message id (one message spans several lines). */
   usageById: Map<string, Usage>
-  cost?: { usd?: number; added?: number; removed?: number }
+  cost?: { usd?: number; added?: number; removed?: number; startTime?: number }
   toolEvent: Map<string, number>
   seq: number
 }
 
 interface Usage {
+  /** Timestamp of the line, to tell this run apart from replayed history. */
+  t: string
   input: number
   output: number
   cacheRead: number
@@ -277,6 +279,7 @@ function applyAssistant(s: SessionState, raw: Obj, ts: string): void {
   const u = isObj(msg.usage) ? msg.usage : undefined
   if (u && real) {
     const usage: Usage = {
+      t: ts,
       input: num(u.input_tokens),
       output: num(u.output_tokens),
       cacheRead: num(u.cache_read_input_tokens),
@@ -345,7 +348,12 @@ export function applyLine(s: SessionState, raw: unknown): void {
       s.aiTitle = str(raw.aiTitle) ?? s.aiTitle
       return
     case 'cost-state':
-      s.cost = { usd: num(raw.totalCostUSD), added: num(raw.totalLinesAdded), removed: num(raw.totalLinesRemoved) }
+      s.cost = {
+        usd: num(raw.totalCostUSD),
+        added: num(raw.totalLinesAdded),
+        removed: num(raw.totalLinesRemoved),
+        ...(num(raw.startTime) > 0 ? { startTime: num(raw.startTime) } : {}),
+      }
       return
   }
 
@@ -365,7 +373,13 @@ export function applyLine(s: SessionState, raw: unknown): void {
 
 export function summarize(s: SessionState): SessionSummary {
   const tokens: TokenTotals = { input: 0, output: 0, cacheRead: 0, cacheCreation: 0 }
+  // A resumed session replays older history into the file; Claude Code's cost-state
+  // only covers the current run, so count usage from that run's start for consistency.
+  const runStart = s.cost?.startTime !== undefined ? new Date(s.cost.startTime).toISOString() : undefined
+  let counted = 0
   for (const u of s.usageById.values()) {
+    if (runStart && u.t && u.t < runStart) continue
+    counted++
     tokens.input += u.input
     tokens.output += u.output
     tokens.cacheRead += u.cacheRead
@@ -390,7 +404,7 @@ export function summarize(s: SessionState): SessionSummary {
     ...(s.startedAt ? { startedAt: s.startedAt } : {}),
     ...(s.lastEventAt ? { lastEventAt: s.lastEventAt } : {}),
     prompts: s.prompts,
-    assistantMessages: s.usageById.size,
+    assistantMessages: counted,
     toolCalls: s.toolCalls,
     tokens,
     ...(s.cost?.usd !== undefined ? { costUSD: s.cost.usd } : {}),

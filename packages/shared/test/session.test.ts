@@ -180,3 +180,23 @@ describe('robustness', () => {
     expect(summarize(s).prompts).toBe(MAX_EVENTS + 5)
   })
 })
+
+describe('resumed sessions', () => {
+  const usage = (o: number) => ({ input_tokens: 1, output_tokens: o, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 })
+
+  it('counts only usage from the current run once cost-state reveals its start', () => {
+    const runStart = Date.parse('2026-01-01T10:00:30.000Z')
+    const s = run([
+      toolUse('t1', 'Read', { file_path: 'a' }, 1, 'old1', usage(1000)), // replayed history (10:00:01)
+      toolUse('t2', 'Read', { file_path: 'b' }, 2, 'old2', usage(2000)), // replayed history
+      toolUse('t3', 'Read', { file_path: 'c' }, 40, 'new1', usage(5)), // this run (10:00:40)
+      { type: 'cost-state', totalCostUSD: 1.5, startTime: runStart },
+    ])
+    expect(summarize(s)).toMatchObject({ tokens: { output: 5, input: 1 }, assistantMessages: 1, costUSD: 1.5 })
+  })
+
+  it('counts everything when there is no cost-state yet (live session)', () => {
+    const s = run([toolUse('t1', 'Read', { file_path: 'a' }, 1, 'm1', usage(10)), toolUse('t2', 'Read', { file_path: 'b' }, 2, 'm2', usage(20))])
+    expect(summarize(s).tokens.output).toBe(30)
+  })
+})
