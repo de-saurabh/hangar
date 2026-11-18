@@ -69,3 +69,6 @@ export function buildBoard<T extends Pick<SessionListItem, 'id' | 'lastEventAt' 
   }
   return { lanes, hiddenOther }
 }
+
+/** The status dot colour for a session in any column; sessions from earlier days count as finished. */
+export const columnDot = (column: BoardColumn): string => LANES.find((l) => l.id === column)?.dot ?? 'bg-done'

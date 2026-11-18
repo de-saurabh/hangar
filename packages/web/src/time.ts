@@ -15,3 +15,15 @@ export function timeAgo(iso: string, now: number = Date.now()): string {
 
 /** How long ago a ms-epoch moment was, without the "ago": "12 min", "3 h". */
 export const elapsed = (ms: number): string => timeAgo(new Date(ms).toISOString()).replace(/ ago$/, '')
+
+/** Group label for a day: "Today", "Yesterday", a weekday within the last week, else "Nov 3". */
+export function dayLabel(iso: string | undefined, now: Date = new Date()): string {
+  const d = iso ? new Date(iso) : undefined
+  if (!d || Number.isNaN(d.getTime())) return 'Earlier'
+  const startOfDay = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime()
+  const days = Math.round((startOfDay(now) - startOfDay(d)) / 86_400_000)
+  if (days <= 0) return 'Today'
+  if (days === 1) return 'Yesterday'
+  if (days < 7) return d.toLocaleDateString(undefined, { weekday: 'long' })
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}

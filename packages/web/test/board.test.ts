@@ -1,46 +1,41 @@
 import { describe, expect, it } from 'vitest'
 import type { LiveState } from '@hangar/shared'
-import { boardColumn, groupByColumn } from '../src/board'
+import { boardColumn, buildBoard } from '../src/board'
 
-const now = new Date(2026, 10, 18, 15, 0, 0) // local time, so "today" is unambiguous
-const iso = (d: Date) => d.toISOString()
-const today = iso(new Date(2026, 10, 18, 9, 0, 0))
-const old = iso(new Date(2026, 10, 10, 9, 0, 0))
-const live = (status: LiveState['status'], over: Partial<LiveState> = {}): LiveState => ({ sessionId: 'x', status, since: 1, lastEventAt: now.getTime(), ...over })
+const now = new Date('2026-11-18T12:00:00')
+const live = (status: LiveState['status'], over: Partial<LiveState> = {}): LiveState => ({ sessionId: 'x', status, since: 1, lastEventAt: 1, ...over })
+const s = (id: string, over: object = {}) => ({ id, repoId: 'r1', lastEventAt: '2026-11-18T09:00:00', ...over })
 
 describe('boardColumn', () => {
-  it('follows live status while the session is alive', () => {
-    expect(boardColumn({ lastEventAt: old }, live('waiting'), now)).toBe('waiting')
-    expect(boardColumn({ lastEventAt: old }, live('running'), now)).toBe('running')
-    expect(boardColumn({ lastEventAt: old }, live('idle'), now)).toBe('idle')
-  })
-
-  it('puts finished sessions in "Finished today" only if active today', () => {
-    expect(boardColumn({ lastEventAt: today }, live('finished'), now)).toBe('finished')
-    expect(boardColumn({ lastEventAt: old }, live('finished', { lastEventAt: new Date(2026, 10, 10).getTime() }), now)).toBe('earlier')
-  })
-
-  it('handles sessions Hangar never saw live', () => {
-    expect(boardColumn({ lastEventAt: today }, undefined, now)).toBe('finished')
-    expect(boardColumn({ lastEventAt: old }, undefined, now)).toBe('earlier')
-    expect(boardColumn({}, undefined, now)).toBe('earlier')
+  it('uses live status while alive, else finished-today or earlier', () => {
+    expect(boardColumn(s('a'), live('waiting'), now)).toBe('waiting')
+    expect(boardColumn(s('a'), live('finished'), now)).toBe('finished')
+    expect(boardColumn(s('a', { lastEventAt: '2026-11-01T09:00:00' }), undefined, now)).toBe('earlier')
   })
 })
 
-describe('groupByColumn', () => {
-  it('groups, and orders waiting sessions by how long they have waited', () => {
-    const sessions = [
-      { id: 'a', lastEventAt: today },
-      { id: 'b', lastEventAt: today },
-      { id: 'c', lastEventAt: old },
-    ]
-    const map = new Map<string, LiveState>([
-      ['a', live('waiting', { sessionId: 'a', since: 500 })],
-      ['b', live('waiting', { sessionId: 'b', since: 100 })],
-    ])
-    const g = groupByColumn(sessions, map, now)
-    expect(g.waiting.map((s) => s.id)).toEqual(['b', 'a'])
-    expect(g.earlier.map((s) => s.id)).toEqual(['c'])
-    expect(g.running).toEqual([])
+describe('buildBoard', () => {
+  const sessions = [s('mine'), s('other-folder', { repoId: undefined }), s('waiting-other', { repoId: undefined }), s('elsewhere', { repoId: 'r2' })]
+  const liveMap = new Map([
+    ['mine', live('running')],
+    ['other-folder', live('idle')],
+    ['waiting-other', live('waiting')],
+    ['elsewhere', live('running')],
+  ])
+  const ids = (xs: { id: string }[]) => xs.map((x) => x.id)
+
+  it('hides unregistered folders except waiting sessions, and counts what it hid', () => {
+    const b = buildBoard(sessions, liveMap, null, false, now)
+    expect(ids(b.lanes.running)).toEqual(['mine', 'elsewhere'])
+    expect(ids(b.lanes.waiting)).toEqual(['waiting-other'])
+    expect(b.hiddenOther).toBe(1)
+  })
+  it('shows them on request', () => {
+    expect(ids(buildBoard(sessions, liveMap, null, true, now).lanes.idle)).toEqual(['other-folder'])
+  })
+  it('filters to one repo', () => {
+    const b = buildBoard(sessions, liveMap, 'r2', false, now)
+    expect(ids(b.lanes.running)).toEqual(['elsewhere'])
+    expect(b.lanes.waiting).toEqual([])
   })
 })

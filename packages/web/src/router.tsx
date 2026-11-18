@@ -5,8 +5,7 @@ import { ConfigPage } from './routes/Config'
 import { Dashboard } from './routes/dashboard/Dashboard'
 import { LibraryPage } from './routes/Library'
 import { InsightsPage } from './routes/Insights'
-import { SessionPage } from './routes/Session'
-import { SessionsPage } from './routes/Sessions'
+import { SessionsPage } from './routes/sessions/Sessions'
 
 const rootRoute = createRootRoute({ component: Layout })
 
@@ -23,14 +22,14 @@ const configRoute = createRoute({
   },
 })
 
-const sessionsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/sessions', component: SessionsPage })
+const sessionsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/sessions', component: () => <SessionsPage /> })
 
 const sessionRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/sessions/$sessionId',
   component: function SessionRoute() {
     const { sessionId } = sessionRoute.useParams()
-    return <SessionPage sessionId={sessionId} />
+    return <SessionsPage sessionId={sessionId} />
   },
 })
 
